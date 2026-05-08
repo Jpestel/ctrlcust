@@ -33,18 +33,24 @@ export default function Step0Documentaire({ data, update, goNext }) {
     const articles = decDoc?.data?.articles
     if (!articles?.length) return
     articles.forEach(async art => {
-      if (hsLabels[art.code]) return // déjà chargé
+      if (hsLabels[art.code]) return
       try {
-        const code8 = art.code.slice(0, 8) // l'API accepte jusqu'à 8 chiffres
-        const res = await fetch(`https://www.tarifdouanier.eu/api/v1/cnSuggest?term=${code8}&lang=fr&year=2026`)
+        const code8 = art.code.slice(0, 8)
+        // Proxy CORS pour contourner la restriction de tarifdouanier.eu
+        const proxyUrl = `https://corsproxy.io/?url=${encodeURIComponent(`https://www.tarifdouanier.eu/api/v1/cnSuggest?term=${code8}&lang=fr&year=2026`)}`
+        const res = await fetch(proxyUrl)
+        if (!res.ok) throw new Error('HTTP ' + res.status)
         const json = await res.json()
-        // La réponse est un tableau, on prend le premier item dont le code correspond
-        const match = json.find(item => item.id && item.id.replace(/\s/g, '').startsWith(code8.slice(0, 6)))
+        const match = Array.isArray(json) && json.find(item =>
+          item.id && item.id.replace(/\s/g, '').startsWith(code8.slice(0, 6))
+        )
         if (match?.label) {
           setHsLabels(prev => ({ ...prev, [art.code]: match.label }))
+        } else {
+          setHsLabels(prev => ({ ...prev, [art.code]: '—' }))
         }
       } catch {
-        // silencieux si pas de réseau
+        setHsLabels(prev => ({ ...prev, [art.code]: '—' }))
       }
     })
   }, [decDoc])
@@ -278,9 +284,11 @@ export default function Step0Documentaire({ data, update, goNext }) {
                 </div>
                 {/* Label NC officiel depuis tarifdouanier.eu */}
                 <div style={{ paddingLeft: '2.5rem', fontSize: '0.8rem', color: 'var(--color-text-muted)', fontStyle: 'italic' }}>
-                  {hsLabels[art.code]
-                    ? <>🏷 <span style={{ color: 'var(--color-primary)', fontStyle: 'normal' }}>{hsLabels[art.code]}</span></>
-                    : <span>⏳ Chargement nomenclature…</span>
+                  {hsLabels[art.code] === undefined
+                    ? <span>⏳ Chargement nomenclature…</span>
+                    : hsLabels[art.code] === '—'
+                      ? <span>Nomenclature non trouvée</span>
+                      : <>🏷 <span style={{ color: 'var(--color-primary)', fontStyle: 'normal' }}>{hsLabels[art.code]}</span></>
                   }
                 </div>
               </div>
