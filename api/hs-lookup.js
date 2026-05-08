@@ -4,7 +4,7 @@
  *
  * Contourne le CORS de tarifdouanier.eu en faisant la requête côté serveur.
  */
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   // CORS : autorise les appels depuis n'importe quelle origine (notre front Vercel)
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS')
