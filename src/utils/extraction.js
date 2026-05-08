@@ -293,6 +293,23 @@ function extractImportateur(text) {
   return null
 }
 
+// Case 2 — Expéditeur / Exportateur
+function extractExportateur(text) {
+  const re = /(?:\b2\s*[\s\n.]*)?(?:[Ee]xp[eé]diteur|[Ee]xportateur)(?:\s*\/\s*(?:[Ee]xp[eé]diteur|[Ee]xportateur))?/g
+  let m
+  while ((m = re.exec(text)) !== null) {
+    const after = text.substring(m.index + m[0].length)
+    const sameLine = /^[ \t]*[:\-][ \t]*([^\n]{3,80})/.exec(after)
+    if (sameLine) {
+      const val = cleanPartyName(sameLine[1])
+      if (isValidPartyName(val)) return val
+    }
+    const result = findPartyInLines(after)
+    if (result) return result
+  }
+  return null
+}
+
 // Case 14 — Déclarant / Représentant en douane (commissionnaire)
 function extractRepresentant(text) {
   const re = /(?:\b14\s*[\s\n.]*)?(?:[Dd][eé]clarant(?:\s*[/\-]\s*[Rr]epr[eé]sentant)?|[Rr]epr[eé]sentant(?:\s+en\s+douane)?)/g
@@ -519,6 +536,7 @@ export function extractDeclarationData(text) {
     containers: extractContainerNumbers(text),
     importateur: extractImportateur(text),
     representant: extractRepresentant(text),
+    exportateur: extractExportateur(text),
   }
 }
 

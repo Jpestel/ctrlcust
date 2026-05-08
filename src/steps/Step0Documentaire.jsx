@@ -20,8 +20,9 @@ export default function Step0Documentaire({ data, update, goNext }) {
   const [poidsBrut, setPoidsBrut] = useState(data.saisieStep0?.poidsBrut || '')
   const [nombreColis, setNombreColis] = useState(data.saisieStep0?.nombreColis || '')
 
-  // Parties (importateur + représentant), éditables
+  // Parties (importateur + exportateur + représentant), éditables
   const [importateur, setImportateur] = useState(data.importateur || '')
+  const [exportateur, setExportateur] = useState(data.exportateur || '')
   const [representant, setRepresentant] = useState(data.representant || '')
 
   // Conteneurs (extraits de la DEC, éditables)
@@ -62,15 +63,18 @@ export default function Step0Documentaire({ data, update, goNext }) {
         setTauxFromDec(true)
       }
 
-      // Pré-remplir importateur et représentant
-      if (extracted.importateur) setImportateur(extracted.importateur)
-      if (extracted.representant) setRepresentant(extracted.representant)
+      // Pré-remplir importateur, exportateur et représentant depuis la DEC
+      // Si non détecté → "Case vide", sinon uniquement le nom extrait
+      setImportateur(extracted.importateur || 'Case vide')
+      setExportateur(extracted.exportateur || 'Case vide')
+      setRepresentant(extracted.representant || 'Case vide')
 
       update({
         docDeclaration: newDoc,
         extractedConteneurs: newConteneurs,
-        importateur: extracted.importateur || '',
-        representant: extracted.representant || '',
+        importateur: extracted.importateur || 'Case vide',
+        exportateur: extracted.exportateur || 'Case vide',
+        representant: extracted.representant || 'Case vide',
       })
     } catch (err) {
       setError(`Erreur d'extraction : ${err.message}`)
@@ -109,6 +113,7 @@ export default function Step0Documentaire({ data, update, goNext }) {
       docDeclaration: decDoc,
       saisieStep0,
       importateur: importateur.trim(),
+      exportateur: exportateur.trim(),
       representant: representant.trim(),
     }
 
@@ -166,9 +171,22 @@ export default function Step0Documentaire({ data, update, goNext }) {
           </p>
         )}
 
-        {/* Importateur + Représentant */}
+        {/* Importateur + Exportateur + Représentant */}
         {decDoc && (
           <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label">
+                Exportateur
+                <span style={{ color: 'var(--color-text-muted)', fontSize: '0.8rem', fontWeight: 400, marginLeft: '0.4rem' }}>(case 2)</span>
+              </label>
+              <input
+                type="text"
+                className="form-control"
+                value={exportateur}
+                onChange={e => { setExportateur(e.target.value); update({ exportateur: e.target.value }) }}
+                placeholder="Non détecté"
+              />
+            </div>
             <div className="form-group" style={{ marginBottom: 0 }}>
               <label className="form-label">
                 Importateur
@@ -179,7 +197,7 @@ export default function Step0Documentaire({ data, update, goNext }) {
                 className="form-control"
                 value={importateur}
                 onChange={e => { setImportateur(e.target.value); update({ importateur: e.target.value }) }}
-                placeholder="Non détecté — saisir manuellement"
+                placeholder="Non détecté"
               />
             </div>
             <div className="form-group" style={{ marginBottom: 0 }}>
@@ -192,7 +210,7 @@ export default function Step0Documentaire({ data, update, goNext }) {
                 className="form-control"
                 value={representant}
                 onChange={e => { setRepresentant(e.target.value); update({ representant: e.target.value }) }}
-                placeholder="Non détecté — saisir manuellement"
+                placeholder="Non détecté"
               />
             </div>
           </div>

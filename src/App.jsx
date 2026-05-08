@@ -52,6 +52,7 @@ const INITIAL_DATA = {
   extractedConteneurs: [],
   saisieStep0: null,
   importateur: '',
+  exportateur: '',
   representant: '',
 }
 
