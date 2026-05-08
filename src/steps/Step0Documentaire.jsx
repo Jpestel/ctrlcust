@@ -108,6 +108,15 @@ export default function Step0Documentaire({ data, update, goNext }) {
         setTauxFromDec(true)
       }
 
+      // Pré-remplir nombre de colis depuis la somme des articles
+      const totalColisArticles = extracted.articles
+        .reduce((sum, art) => sum + (art.nombreColis || 0), 0)
+      if (totalColisArticles > 0) {
+        setNombreColis(String(totalColisArticles))
+      } else if (extracted.nombreColis) {
+        setNombreColis(String(extracted.nombreColis))
+      }
+
       // Pré-remplir importateur, exportateur et représentant depuis la DEC
       // Si non détecté → "Case vide", sinon uniquement le nom extrait
       setImportateur(extracted.importateur || 'Case vide')
@@ -288,6 +297,24 @@ export default function Step0Documentaire({ data, update, goNext }) {
           <div className="articles-table">
             {decDoc.data.articles.map(art => (
               <div key={art.code} className="article-row" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.25rem' }}>
+                {/* Nombre de colis par article */}
+                {art.nombreColis && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', paddingBottom: '0.2rem' }}>
+                    <span style={{
+                      background: 'var(--color-primary)',
+                      color: '#fff',
+                      borderRadius: '0.35rem',
+                      padding: '0.1rem 0.5rem',
+                      fontSize: '0.78rem',
+                      fontWeight: 600,
+                    }}>
+                      📦 {art.nombreColis.toLocaleString('fr-FR')} colis
+                    </span>
+                    {art.typeColis && (
+                      <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>{art.typeColis}</span>
+                    )}
+                  </div>
+                )}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', width: '100%' }}>
                   <span className="article-position">#{art.position}</span>
                   <span className="article-code">{art.code}</span>
@@ -337,6 +364,34 @@ export default function Step0Documentaire({ data, update, goNext }) {
               </div>
             ))}
           </div>
+          {/* Total colis tous articles */}
+          {(() => {
+            const total = decDoc.data.articles.reduce((sum, art) => sum + (art.nombreColis || 0), 0)
+            if (total === 0) return null
+            return (
+              <div style={{
+                marginTop: '0.75rem',
+                display: 'flex',
+                justifyContent: 'flex-end',
+                alignItems: 'center',
+                gap: '0.5rem',
+                borderTop: '1px solid var(--color-border)',
+                paddingTop: '0.6rem',
+              }}>
+                <span style={{ fontSize: '0.82rem', color: 'var(--color-text-muted)' }}>Total colis déclarés :</span>
+                <span style={{
+                  background: 'var(--color-primary)',
+                  color: '#fff',
+                  borderRadius: '0.35rem',
+                  padding: '0.15rem 0.6rem',
+                  fontSize: '0.85rem',
+                  fontWeight: 700,
+                }}>
+                  📦 {total.toLocaleString('fr-FR')} colis
+                </span>
+              </div>
+            )
+          })()}
         </section>
       )}
 
@@ -372,6 +427,46 @@ export default function Step0Documentaire({ data, update, goNext }) {
       {/* 4. Saisie manuelle */}
       <section className="card">
         <h3 className="card-title">{sn()}. Données documents commerciaux</h3>
+
+        {/* Liquidation totale extraite de la DEC */}
+        {decDoc?.data?.liquidationTotale && (() => {
+          const liq = decDoc.data.liquidationTotale
+          const rows = [
+            { label: 'Montant total facturé', val: liq.montantFacture },
+            { label: 'Montant total à couvrir', val: liq.montantACouvrir },
+            { label: 'Montant total à payer', val: liq.montantAPayer },
+            { label: 'Taux de change', val: liq.tauxChange },
+            { label: 'Mode de paiement', val: liq.modePaiement },
+            { label: 'Montant non cautionné', val: liq.montantNonCautionné },
+            { label: 'Montant cautionné', val: liq.montantCautionné },
+          ].filter(r => r.val)
+
+          if (rows.length === 0) return null
+          return (
+            <div style={{
+              background: 'var(--color-bg-subtle, #f8f9ff)',
+              border: '1px solid var(--color-border)',
+              borderRadius: '0.5rem',
+              padding: '0.75rem 1rem',
+              marginBottom: '1.25rem',
+            }}>
+              <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-primary)', marginBottom: '0.5rem' }}>
+                📋 Liquidation totale (extrait DEC)
+              </div>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem' }}>
+                <tbody>
+                  {rows.map(({ label, val }) => (
+                    <tr key={label} style={{ borderBottom: '1px solid var(--color-border)' }}>
+                      <td style={{ padding: '0.3rem 0.5rem 0.3rem 0', color: 'var(--color-text-muted)', width: '55%' }}>{label}</td>
+                      <td style={{ padding: '0.3rem 0', fontWeight: 500, color: 'var(--color-text)' }}>{val}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )
+        })()}
+
         <p className="step-description" style={{ marginBottom: '1rem' }}>
           Saisissez les valeurs issues de vos factures, BL et packing list.
           {decDoc?.data && (

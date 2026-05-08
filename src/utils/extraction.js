@@ -413,12 +413,28 @@ function extractDecArticles(text) {
   return codesWithPos.map((item, i) => {
     const { code, index } = item
 
-    // Zone de recherche : 600 chars après le code SH (avant le prochain code SH si présent)
+    // Zone de recherche : 800 chars après le code SH (avant le prochain code SH si présent)
     const nextCode = codesWithPos[i + 1]
-    const end = nextCode ? Math.min(nextCode.index, index + 600) : index + 600
+    const end = nextCode ? Math.min(nextCode.index, index + 800) : index + 800
     const after = text.substring(index + code.length, end)
 
-    return { position: i + 1, code, designation: extractDesignation(after) }
+    // Nombre de colis dans la partie CONDITIONNEMENT de l'article
+    let nombreColis = null
+    const colisRe = /Nombre\s*de\s*colis\s*[:\-]?\s*(\d[\d\s]*)/i
+    const mColis = colisRe.exec(after)
+    if (mColis) {
+      nombreColis = parseInt(mColis[1].replace(/\s/g, ''), 10)
+    }
+
+    // Type de colis (ex: "TE - Pneumatique")
+    let typeColis = null
+    const typeRe = /Type\s*de\s*colis\s*[:\-]?\s*([^\n]{2,50})/i
+    const mType = typeRe.exec(after)
+    if (mType) {
+      typeColis = mType[1].trim()
+    }
+
+    return { position: i + 1, code, designation: extractDesignation(after), nombreColis, typeColis }
   })
 }
 
