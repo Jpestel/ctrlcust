@@ -44,12 +44,22 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte avant ni après, sans 
   ]
 }`
 
+  const apiKey = process.env.ANTHROPIC_API_KEY
+
+  // DEBUG
+  console.log('[controle-conseils] ANTHROPIC_API_KEY présente:', !!apiKey, '| longueur:', apiKey?.length)
+
+  if (!apiKey) {
+    return res.status(502).json({ error: 'ANTHROPIC_API_KEY non configurée dans les variables d\'environnement Vercel' })
+  }
+
   try {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'anthropic-version': '2023-06-01',
+        'x-api-key': apiKey,
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
