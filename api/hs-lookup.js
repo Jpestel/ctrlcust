@@ -37,6 +37,9 @@ export default async function handler(req, res) {
 
     const data = await response.json()
 
+    // DEBUG — à retirer après calibration
+    console.log('[hs-lookup] code:', code8, '| réponse brute:', JSON.stringify(data).slice(0, 500))
+
     // Cherche la meilleure correspondance pour le code fourni
     const prefix6 = code8.slice(0, 6)
     const match = Array.isArray(data)
@@ -52,7 +55,7 @@ export default async function handler(req, res) {
       return res.status(200).json({ code, label: data[0].label })
     }
 
-    return res.status(200).json({ code, label: null })
+    return res.status(200).json({ code, label: null, _debug: Array.isArray(data) ? data.slice(0, 3) : data })
 
   } catch (err) {
     return res.status(502).json({ error: `Erreur proxy : ${err.message}` })
