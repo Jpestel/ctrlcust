@@ -2,70 +2,102 @@ import { useState } from 'react'
 import { uid } from '../utils'
 import PhrasesRapides from '../components/PhrasesRapides'
 
-function CartonCard({ carton, index, onUpdate, onRemove, dateControle }) {
+const TYPES_CONDITIONNEMENT = [
+  { value: 'carton', label: 'Carton' },
+  { value: 'palette', label: 'Palette' },
+  { value: 'sac', label: 'Sac' },
+  { value: 'caisse', label: 'Caisse / Colis bois' },
+  { value: 'vrac', label: 'Vrac (directement dans le conteneur)' },
+  { value: 'unite', label: 'Unité isolée' },
+  { value: 'autre', label: 'Autre' },
+]
+
+function UniteCard({ unite, index, onUpdate, onRemove, dateControle }) {
   const dateStr = dateControle
     ? new Date(dateControle).toLocaleDateString('fr-FR')
     : '__/__/____'
 
+  const typeLabel = TYPES_CONDITIONNEMENT.find(t => t.value === unite.type)?.label || 'Unité'
+  const isVrac = unite.type === 'vrac'
+
   return (
     <div className="carton-card">
       <div className="carton-header">
-        <span className="carton-num">Carton n°{index + 1}</span>
+        <span className="carton-num">Unité n°{index + 1}</span>
         <button className="btn btn-ghost btn-sm" onClick={onRemove}>✕ Supprimer</button>
       </div>
 
       <div className="form-group">
-        <label>Référence du carton</label>
-        <input
-          type="text"
-          placeholder="ex. REF-2023-001"
-          value={carton.reference}
-          onChange={e => onUpdate({ reference: e.target.value })}
-          style={{ fontFamily: 'monospace' }}
-        />
+        <label>Type de conditionnement</label>
+        <select value={unite.type} onChange={e => onUpdate({ type: e.target.value })}>
+          {TYPES_CONDITIONNEMENT.map(t => (
+            <option key={t.value} value={t.value}>{t.label}</option>
+          ))}
+        </select>
       </div>
 
+      {!isVrac && (
+        <div className="form-group">
+          <label>Référence / identification</label>
+          <input
+            type="text"
+            placeholder="ex. REF-2023-001"
+            value={unite.reference}
+            onChange={e => onUpdate({ reference: e.target.value })}
+            style={{ fontFamily: 'monospace' }}
+          />
+        </div>
+      )}
+
       <div className="form-group">
-        <label>Description des mentions sur le carton</label>
+        <label>
+          {isVrac
+            ? 'Description de la marchandise en vrac'
+            : `Description des mentions sur le ${typeLabel.toLowerCase()}`}
+        </label>
         <textarea
-          placeholder="Décrivez les inscriptions, marquages, étiquettes..."
-          value={carton.descriptionMentions}
+          placeholder={isVrac
+            ? "Décrivez la nature, le volume, l'état apparent de la marchandise en vrac..."
+            : 'Décrivez les inscriptions, marquages, étiquettes...'}
+          value={unite.descriptionMentions}
           onChange={e => onUpdate({ descriptionMentions: e.target.value })}
         />
       </div>
 
-      <div className="form-group">
-        <label>Statut à la fermeture</label>
-        <div className="radio-group">
-          <label className="radio-option">
-            <input
-              type="radio"
-              name={`fermeture-${carton.id}`}
-              value="complet"
-              checked={carton.mentionFermeture === 'complet'}
-              onChange={() => onUpdate({ mentionFermeture: 'complet' })}
-            />
-            Complet — <em style={{ fontWeight: 400 }}>mention "Visite douane — {dateStr} — Complet"</em>
-          </label>
-          <label className="radio-option">
-            <input
-              type="radio"
-              name={`fermeture-${carton.id}`}
-              value="prelevement_examen"
-              checked={carton.mentionFermeture === 'prelevement_examen'}
-              onChange={() => onUpdate({ mentionFermeture: 'prelevement_examen' })}
-            />
-            Prélèvement pour examen
-          </label>
+      {!isVrac && (
+        <div className="form-group">
+          <label>Statut à la fermeture</label>
+          <div className="radio-group">
+            <label className="radio-option">
+              <input
+                type="radio"
+                name={`fermeture-${unite.id}`}
+                value="complet"
+                checked={unite.mentionFermeture === 'complet'}
+                onChange={() => onUpdate({ mentionFermeture: 'complet' })}
+              />
+              Complet — <em style={{ fontWeight: 400 }}>mention "Visite douane — {dateStr} — Complet"</em>
+            </label>
+            <label className="radio-option">
+              <input
+                type="radio"
+                name={`fermeture-${unite.id}`}
+                value="prelevement_examen"
+                checked={unite.mentionFermeture === 'prelevement_examen'}
+                onChange={() => onUpdate({ mentionFermeture: 'prelevement_examen' })}
+              />
+              Prélèvement pour examen
+            </label>
+          </div>
         </div>
-      </div>
+      )}
 
-      {carton.mentionFermeture === 'prelevement_examen' && (
+      {!isVrac && unite.mentionFermeture === 'prelevement_examen' && (
         <div className="form-group">
           <label>Détail du prélèvement pour examen</label>
           <textarea
             placeholder="Précisez les articles prélevés et leur quantité..."
-            value={carton.detailPrelevementExamen}
+            value={unite.detailPrelevementExamen}
             onChange={e => onUpdate({ detailPrelevementExamen: e.target.value })}
           />
           <p className="helper">Ces articles seront rendus au RDE après examen.</p>
@@ -163,10 +195,11 @@ function ConteneurControle({ ctrl, conteneur, plombBL, dateControle, onUpdate, i
     onUpdate({ commis: { ...ctrl.commis, [field]: value } })
   }
 
-  function addCarton() {
+  function addUnite() {
     onUpdate({
       cartons: [...ctrl.cartons, {
         id: uid(),
+        type: 'carton',
         reference: '',
         descriptionMentions: '',
         mentionFermeture: 'complet',
@@ -175,14 +208,14 @@ function ConteneurControle({ ctrl, conteneur, plombBL, dateControle, onUpdate, i
     })
   }
 
-  function updateCarton(cartonId, updates) {
+  function updateUnite(uniteId, updates) {
     onUpdate({
-      cartons: ctrl.cartons.map(c => c.id === cartonId ? { ...c, ...updates } : c)
+      cartons: ctrl.cartons.map(c => c.id === uniteId ? { ...c, ...updates } : c)
     })
   }
 
-  function removeCarton(cartonId) {
-    onUpdate({ cartons: ctrl.cartons.filter(c => c.id !== cartonId) })
+  function removeUnite(uniteId) {
+    onUpdate({ cartons: ctrl.cartons.filter(c => c.id !== uniteId) })
   }
 
   function addPrelev() {
@@ -328,23 +361,23 @@ function ConteneurControle({ ctrl, conteneur, plombBL, dateControle, onUpdate, i
 
       <hr className="divider" />
 
-      {/* CARTONS */}
+      {/* UNITÉS CONTRÔLÉES */}
       <div className="section">
-        <div className="section-title">Vérification des marchandises (cartons)</div>
+        <div className="section-title">Vérification des marchandises</div>
 
-        {ctrl.cartons.map((carton, i) => (
-          <CartonCard
-            key={carton.id}
-            carton={carton}
+        {ctrl.cartons.map((unite, i) => (
+          <UniteCard
+            key={unite.id}
+            unite={unite}
             index={i}
             dateControle={dateControle}
-            onUpdate={updates => updateCarton(carton.id, updates)}
-            onRemove={() => removeCarton(carton.id)}
+            onUpdate={updates => updateUnite(unite.id, updates)}
+            onRemove={() => removeUnite(unite.id)}
           />
         ))}
 
-        <button className="btn btn-secondary btn-sm" onClick={addCarton}>
-          + Ajouter un carton
+        <button className="btn btn-secondary btn-sm" onClick={addUnite}>
+          + Ajouter une unité contrôlée
         </button>
       </div>
 

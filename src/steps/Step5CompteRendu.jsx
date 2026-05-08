@@ -38,14 +38,28 @@ function genVisiteConteneur(conteneur, ctrl, plombBL, date, isTerminal) {
 
   if (ctrl.cartons.length > 0) {
     t += `VÉRIFICATION DES MARCHANDISES :\n\n`
-    ctrl.cartons.forEach((carton, i) => {
-      t += `Carton n°${i + 1} — Référence : ${carton.reference || 'Non renseignée'}\n`
-      if (carton.descriptionMentions) t += `${carton.descriptionMentions}\n`
-      if (carton.mentionFermeture === 'complet') {
-        t += `Après ouverture et vérification du contenu, le carton a été refermé. Mention apposée : "Visite douane — ${date} — Complet".\n\n`
+    ctrl.cartons.forEach((unite, i) => {
+      const type = unite.type || 'carton'
+      const typesLabels = {
+        carton: 'Carton', palette: 'Palette', sac: 'Sac',
+        caisse: 'Caisse / Colis bois', vrac: 'Vrac', unite: 'Unité isolée', autre: 'Unité'
+      }
+      const typeLabel = typesLabels[type] || 'Unité'
+      const isVrac = type === 'vrac'
+
+      if (isVrac) {
+        t += `Marchandise en vrac (unité n°${i + 1}) :\n`
+        if (unite.descriptionMentions) t += `${unite.descriptionMentions}\n`
+        t += `\n`
       } else {
-        const detail = carton.detailPrelevementExamen ? ` (${carton.detailPrelevementExamen})` : ''
-        t += `Après ouverture et vérification, un prélèvement pour examen a été effectué${detail}. Le carton a été refermé avec mention du prélèvement. Les articles prélevés seront restitués au RDE après examen.\n\n`
+        t += `${typeLabel} n°${i + 1}${unite.reference ? ` — Référence : ${unite.reference}` : ''}\n`
+        if (unite.descriptionMentions) t += `${unite.descriptionMentions}\n`
+        if (unite.mentionFermeture === 'complet') {
+          t += `Après ouverture et vérification du contenu, le ${typeLabel.toLowerCase()} a été refermé. Mention apposée : "Visite douane — ${date} — Complet".\n\n`
+        } else {
+          const detail = unite.detailPrelevementExamen ? ` (${unite.detailPrelevementExamen})` : ''
+          t += `Après ouverture et vérification, un prélèvement pour examen a été effectué${detail}. Le ${typeLabel.toLowerCase()} a été refermé avec mention du prélèvement. Les articles prélevés seront restitués au RDE après examen.\n\n`
+        }
       }
     })
   }
