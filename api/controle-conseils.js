@@ -62,7 +62,7 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte avant ni après, sans 
         'x-api-key': apiKey,
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-5',
         max_tokens: 1000,
         messages: [{ role: 'user', content: prompt }],
       }),
