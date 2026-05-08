@@ -28,6 +28,8 @@ export default function Step0Documentaire({ data, update, goNext }) {
 
   // Labels NC officiels récupérés depuis tarifdouanier.eu pour chaque code SH
   const [hsLabels, setHsLabels] = useState({})
+  // Conseils de contrôle physique générés par Claude pour chaque code SH
+  const [conseils, setConseils] = useState({})
 
   useEffect(() => {
     const articles = decDoc?.data?.articles
@@ -38,12 +40,35 @@ export default function Step0Documentaire({ data, update, goNext }) {
         const res = await fetch(`/api/hs-lookup?code=${art.code}`)
         if (!res.ok) throw new Error('HTTP ' + res.status)
         const json = await res.json()
-        setHsLabels(prev => ({ ...prev, [art.code]: json.label || '—' }))
+        const label = json.label || '—'
+        setHsLabels(prev => ({ ...prev, [art.code]: label }))
+
+        // Dès qu'on a le label NC, on demande les conseils de contrôle
+        if (label && label !== '—') {
+          fetchConseils(art.code, label, art.designation)
+        }
       } catch {
         setHsLabels(prev => ({ ...prev, [art.code]: '—' }))
       }
     })
   }, [decDoc])
+
+  async function fetchConseils(code, labelNC, designationCommerciale) {
+    if (conseils[code] !== undefined) return
+    setConseils(prev => ({ ...prev, [code]: 'loading' }))
+    try {
+      const res = await fetch('/api/controle-conseils', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code, labelNC, designationCommerciale }),
+      })
+      if (!res.ok) throw new Error('HTTP ' + res.status)
+      const json = await res.json()
+      setConseils(prev => ({ ...prev, [code]: json.conseils || [] }))
+    } catch {
+      setConseils(prev => ({ ...prev, [code]: [] }))
+    }
+  }
 
   // Conteneurs (extraits de la DEC, éditables)
   const [conteneurs, setConteneurs] = useState(data.extractedConteneurs || [])
@@ -281,6 +306,34 @@ export default function Step0Documentaire({ data, update, goNext }) {
                       : <>🏷 <span style={{ color: 'var(--color-primary)', fontStyle: 'normal' }}>{hsLabels[art.code]}</span></>
                   }
                 </div>
+
+                {/* Conseils de contrôle physique générés par Claude */}
+                {hsLabels[art.code] && hsLabels[art.code] !== '—' && (
+                  <div style={{ paddingLeft: '2.5rem', marginTop: '0.5rem', width: '100%' }}>
+                    {conseils[art.code] === undefined || conseils[art.code] === 'loading' ? (
+                      <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', fontStyle: 'italic' }}>
+                        ⏳ Génération des points de contrôle…
+                      </div>
+                    ) : conseils[art.code].length === 0 ? null : (
+                      <div style={{
+                        background: 'var(--color-bg-subtle, #f0f4ff)',
+                        border: '1px solid var(--color-border)',
+                        borderRadius: '0.5rem',
+                        padding: '0.75rem 1rem',
+                        marginTop: '0.25rem',
+                      }}>
+                        <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-primary)', marginBottom: '0.4rem' }}>
+                          🔍 Points de contrôle physique
+                        </div>
+                        <ul style={{ margin: 0, paddingLeft: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                          {conseils[art.code].map((c, i) => (
+                            <li key={i} style={{ fontSize: '0.82rem', color: 'var(--color-text)', lineHeight: 1.45 }}>{c}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             ))}
           </div>
