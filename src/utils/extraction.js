@@ -594,11 +594,16 @@ export function extractDeclarationData(text) {
     }
   }
 
+  // Nombre de colis : somme des articles en priorité, sinon extraction globale
+  const articlesData = extractDecArticles(text)
+  const colisParArticles = articlesData.reduce((sum, art) => sum + (art.nombreColis || 0), 0)
+  const nombreColis = colisParArticles > 0 ? colisParArticles : extractDecPackageCount(text)
+
   return {
     mrn: extractMRN(text),
-    articles: extractDecArticles(text),
+    articles: articlesData,
     poidsBrut: extractDecGrossWeight(text),
-    nombreColis: extractDecPackageCount(text),
+    nombreColis,
     valeur,
     tauxChange,
     deviseFacture,
