@@ -24,6 +24,7 @@ export default function Step0Documentaire({ data, update, goNext }) {
   const [importateur, setImportateur] = useState(data.importateur || '')
   const [exportateur, setExportateur] = useState(data.exportateur || '')
   const [representant, setRepresentant] = useState(data.representant || '')
+  const [declarant, setDeclarant] = useState(data.declarant || '')
 
   // Conteneurs (extraits de la DEC, éditables)
   const [conteneurs, setConteneurs] = useState(data.extractedConteneurs || [])
@@ -68,6 +69,7 @@ export default function Step0Documentaire({ data, update, goNext }) {
       setImportateur(extracted.importateur || 'Case vide')
       setExportateur(extracted.exportateur || 'Case vide')
       setRepresentant(extracted.representant || 'Case vide')
+      setDeclarant(extracted.declarant || 'Case vide')
 
       update({
         docDeclaration: newDoc,
@@ -75,6 +77,7 @@ export default function Step0Documentaire({ data, update, goNext }) {
         importateur: extracted.importateur || 'Case vide',
         exportateur: extracted.exportateur || 'Case vide',
         representant: extracted.representant || 'Case vide',
+        declarant: extracted.declarant || 'Case vide',
       })
     } catch (err) {
       setError(`Erreur d'extraction : ${err.message}`)
@@ -115,6 +118,7 @@ export default function Step0Documentaire({ data, update, goNext }) {
       importateur: importateur.trim(),
       exportateur: exportateur.trim(),
       representant: representant.trim(),
+      declarant: declarant.trim(),
     }
 
     // Pré-remplir le MRN dans l'étape 1 si non encore saisi
@@ -210,6 +214,19 @@ export default function Step0Documentaire({ data, update, goNext }) {
                 className="form-control"
                 value={representant}
                 onChange={e => { setRepresentant(e.target.value); update({ representant: e.target.value }) }}
+                placeholder="Non détecté"
+              />
+            </div>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label">
+                Déclarant
+                <span style={{ color: 'var(--color-text-muted)', fontSize: '0.8rem', fontWeight: 400, marginLeft: '0.4rem' }}>(déclarant en douane)</span>
+              </label>
+              <input
+                type="text"
+                className="form-control"
+                value={declarant}
+                onChange={e => { setDeclarant(e.target.value); update({ declarant: e.target.value }) }}
                 placeholder="Non détecté"
               />
             </div>

@@ -54,6 +54,7 @@ const INITIAL_DATA = {
   importateur: '',
   exportateur: '',
   representant: '',
+  declarant: '',
 }
 
 function makeControle(conteneurId) {

@@ -273,58 +273,75 @@ function findPartyInLines(textAfterLabel, maxLines = 8) {
   return null
 }
 
-// Case 8 — Destinataire (importateur)
-function extractImportateur(text) {
-  // Toutes les occurrences de "Destinataire" (avec ou sans "8" avant)
-  const re = /(?:\b8\s*[\s\n.]*)?[Dd]estinataire/g
+// Extrait la valeur après un label de la forme "LABEL : valeur" ou "LABEL :\nvaleur"
+// Gère les deux formats :
+//   - Format DELTA IE (majuscules) : EXPORTATEUR : NOM ENTREPRISE
+//   - Format papier classique      : Exportateur / 2. Exportateur / Expéditeur
+// Retourne null si la case est vide (label présent mais rien derrière)
+function extractParty(text, patterns) {
+  // Construit une regex qui matche tous les patterns fournis
+  const combined = patterns.join('|')
+  const re = new RegExp(`(?:${combined})`, 'gi')
   let m
   while ((m = re.exec(text)) !== null) {
     const after = text.substring(m.index + m[0].length)
-    // Tenter d'abord sur la même ligne (Destinataire : COMPANY)
-    const sameLine = /^[ \t]*[:\-][ \t]*([^\n]{3,80})/.exec(after)
+    // Même ligne : "LABEL : valeur"
+    const sameLine = /^[ \t]*[:\-][ \t]*([^\n]{2,120})/.exec(after)
     if (sameLine) {
-      const val = cleanPartyName(sameLine[1])
+      const raw = sameLine[1].trim()
+      // Retirer le numéro EORI/SIRET collé derrière le nom : "DISTRI CASH ACCESSOIRES - FR383485018"
+      const nameOnly = raw.replace(/\s*[-–]\s*[A-Z]{0,2}\d{9,}.*$/i, '').trim()
+      const val = cleanPartyName(nameOnly || raw)
       if (isValidPartyName(val)) return val
+      // La ligne existe mais est vide → case vide explicite
+      if (raw.length === 0) return null
     }
-    // Sinon scanner les lignes suivantes
+    // Ligne suivante
     const result = findPartyInLines(after)
-    if (result) return result
+    if (result) {
+      return result.replace(/\s*[-–]\s*[A-Z]{0,2}\d{9,}.*$/i, '').trim() || result
+    }
   }
   return null
 }
 
-// Case 2 — Expéditeur / Exportateur
+// Case 2 / EXPORTATEUR
 function extractExportateur(text) {
-  const re = /(?:\b2\s*[\s\n.]*)?(?:[Ee]xp[eé]diteur|[Ee]xportateur)(?:\s*\/\s*(?:[Ee]xp[eé]diteur|[Ee]xportateur))?/g
-  let m
-  while ((m = re.exec(text)) !== null) {
-    const after = text.substring(m.index + m[0].length)
-    const sameLine = /^[ \t]*[:\-][ \t]*([^\n]{3,80})/.exec(after)
-    if (sameLine) {
-      const val = cleanPartyName(sameLine[1])
-      if (isValidPartyName(val)) return val
-    }
-    const result = findPartyInLines(after)
-    if (result) return result
-  }
-  return null
+  return extractParty(text, [
+    'EXPORTATEUR\\s*:',
+    '(?:\\b2\\s*[\\s\\n.]*)?(?:[Ee]xp[eé]diteur|[Ee]xportateur)(?:\\s*\\/\\s*(?:[Ee]xp[eé]diteur|[Ee]xportateur))?',
+  ])
 }
 
-// Case 14 — Déclarant / Représentant en douane (commissionnaire)
+// Case 8 / IMPORTATEUR (Destinataire)
+function extractImportateur(text) {
+  return extractParty(text, [
+    'IMPORTATEUR\\s*:',
+    '(?:\\b8\\s*[\\s\\n.]*)?[Dd]estinataire',
+  ])
+}
+
+// Case 14 / REPRESENTANT + DECLARANT
 function extractRepresentant(text) {
-  const re = /(?:\b14\s*[\s\n.]*)?(?:[Dd][eé]clarant(?:\s*[/\-]\s*[Rr]epr[eé]sentant)?|[Rr]epr[eé]sentant(?:\s+en\s+douane)?)/g
-  let m
-  while ((m = re.exec(text)) !== null) {
-    const after = text.substring(m.index + m[0].length)
-    const sameLine = /^[ \t]*[:\-][ \t]*([^\n]{3,80})/.exec(after)
-    if (sameLine) {
-      const val = cleanPartyName(sameLine[1])
-      if (isValidPartyName(val)) return val
-    }
-    const result = findPartyInLines(after)
-    if (result) return result
-  }
-  return null
+  // Cherche d'abord REPRESENTANT explicitement
+  const rep = extractParty(text, [
+    'REPRESENTANT\\s*:',
+    '(?:\\b14\\s*[\\s\\n.]*)?[Rr]epr[eé]sentant(?:\\s+en\\s+douane)?',
+  ])
+  if (rep) return rep
+  // Fallback sur DECLARANT si représentant vide
+  return extractParty(text, [
+    'DECLARANT\\s*:',
+    '(?:\\b14\\s*[\\s\\n.]*)?[Dd][eé]clarant',
+  ])
+}
+
+// Case 14 / DECLARANT seul (champ séparé)
+function extractDeclarant(text) {
+  return extractParty(text, [
+    'DECLARANT\\s*:',
+    '(?:\\b14\\s*[\\s\\n.]*)?[Dd][eé]clarant',
+  ])
 }
 
 function extractMRN(text) {
@@ -537,6 +554,7 @@ export function extractDeclarationData(text) {
     importateur: extractImportateur(text),
     representant: extractRepresentant(text),
     exportateur: extractExportateur(text),
+    declarant: extractDeclarant(text),
   }
 }
 
