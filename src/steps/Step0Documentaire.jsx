@@ -301,7 +301,7 @@ export default function Step0Documentaire({ data, update, goNext }) {
                 {art.nombreColis && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', paddingBottom: '0.2rem' }}>
                     <span style={{
-                      background: 'var(--color-primary)',
+                      background: '#1e40af',
                       color: '#fff',
                       borderRadius: '0.35rem',
                       padding: '0.1rem 0.5rem',
@@ -380,7 +380,7 @@ export default function Step0Documentaire({ data, update, goNext }) {
               }}>
                 <span style={{ fontSize: '0.82rem', color: 'var(--color-text-muted)' }}>Total colis déclarés :</span>
                 <span style={{
-                  background: 'var(--color-primary)',
+                  background: '#1e40af',
                   color: '#fff',
                   borderRadius: '0.35rem',
                   padding: '0.15rem 0.6rem',
