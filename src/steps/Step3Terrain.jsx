@@ -411,6 +411,26 @@ function VisitePanel({ conteneurs, controles, plombsBL, dateControle, isTerminal
   const activeCtrl = controles.find(c => c.conteneurId === activeId)
   const activeConteneur = conteneurs.find(c => c.id === activeId)
 
+  function handleTabChange(id) {
+    // Si on bascule vers un conteneur dont le commis est vide,
+    // on pré-remplit avec les infos du premier conteneur
+    const targetCtrl = controles.find(c => c.conteneurId === id)
+    const firstCtrl = controles[0]
+    if (
+      targetCtrl &&
+      firstCtrl &&
+      targetCtrl.conteneurId !== firstCtrl.conteneurId &&
+      !targetCtrl.commis?.prenom &&
+      !targetCtrl.commis?.nom &&
+      (firstCtrl.commis?.prenom || firstCtrl.commis?.nom)
+    ) {
+      onUpdateControle(id, {
+        commis: { ...targetCtrl.commis, ...firstCtrl.commis }
+      })
+    }
+    setActiveId(id)
+  }
+
   return (
     <>
       {conteneurs.length > 1 && (
@@ -419,7 +439,7 @@ function VisitePanel({ conteneurs, controles, plombsBL, dateControle, isTerminal
             <button
               key={c.id}
               className={`container-tab ${c.id === activeId ? 'active' : ''}`}
-              onClick={() => setActiveId(c.id)}
+              onClick={() => handleTabChange(c.id)}
             >
               {c.numero}
             </button>
