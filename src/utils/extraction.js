@@ -491,6 +491,32 @@ function extractDecAllValues(text) {
   return byDevise
 }
 
+// ── Liquidation totale ────────────────────────────────────────────────────────
+function extractLiquidationTotale(text) {
+  function grab(label) {
+    // Cherche le label (insensible casse, espaces flexibles) puis capture ce qui suit
+    const re = new RegExp(label + '[\\s\\S]{0,10}?([\\d][\\d\\s.,]+(?:EUR|USD|GBP|CHF|CNY)?(?:\\s*/\\s*[\\d][\\d\\s.,]+(?:EUR|USD|GBP|CHF|CNY)?)?)', 'i')
+    const m = re.exec(text)
+    return m ? m[1].trim().replace(/\s+/g, ' ') : null
+  }
+
+  function grabText(label) {
+    const re = new RegExp(label + '[\\s:]{0,5}([a-zA-ZÀ-ÿ][^\\n]{2,60})', 'i')
+    const m = re.exec(text)
+    return m ? m[1].trim() : null
+  }
+
+  return {
+    montantFacture:      grab('Montant\\s*total\\s*factur[eé]\\s*:?'),
+    montantACouvrir:     grab('Montant\\s*total\\s*[àa]\\s*couvrir\\s*:?'),
+    montantAPayer:       grab('Montant\\s*total\\s*[àa]\\s*[Pp]ayer\\s*:?'),
+    tauxChange:          grab('Taux\\s*de\\s*change\\s*:?'),
+    modePaiement:        grabText('Mode\\s*de\\s*paiement\\s*:?'),
+    montantNonCautionné: grab('Montant\\s*total\\s*non\\s*cautionn[eé]\\s*:?'),
+    montantCautionné:    grab('Montant\\s*total\\s*cautionn[eé]\\s*:?'),
+  }
+}
+
 /**
  * Extraction complète d'une déclaration en douane (DEC).
  * Retourne { mrn, articles, poidsBrut, nombreColis, valeur, tauxChange, deviseFacture, containers }
@@ -513,16 +539,32 @@ export function extractDeclarationData(text) {
       ? { valeur: allValues[Object.keys(allValues)[0]], devise: Object.keys(allValues)[0] }
       : null
 
-  // Taux de change : dérivé de EUR + devise étrangère (ex: EUR 71 907 + USD 84 369 → 1 EUR = 1.1732 USD)
+  // Taux de change : lire directement depuis "Taux de change: 1,1733" en priorité
   let tauxChange = null
   let deviseFacture = null
 
-  // Cherche d'abord un taux explicite : "1 EUR = 1.0831 USD" ou "Taux : 1.0831"
-  const expliciteRe = /1\s*EUR\s*[=:]\s*([\d.,]+)\s*(USD|GBP|CHF|CNY|JPY|CAD)/i
-  const mEx = expliciteRe.exec(text)
-  if (mEx) {
-    tauxChange = parseFloat(mEx[1].replace(',', '.'))
-    deviseFacture = mEx[2].toUpperCase()
+  // Priorité 1 : taux explicite dans la liquidation totale "Taux de change: 1,1733"
+  const tauxDirectRe = /Taux\s*de\s*change\s*:?\s*([\d]+[.,][\d]+)/i
+  const mTaux = tauxDirectRe.exec(text)
+  if (mTaux) {
+    tauxChange = parseFloat(mTaux[1].replace(',', '.'))
+  }
+
+  // Priorité 2 : "1 EUR = 1.0831 USD"
+  if (!tauxChange) {
+    const expliciteRe = /1\s*EUR\s*[=:]\s*([\d.,]+)\s*(USD|GBP|CHF|CNY|JPY|CAD)/i
+    const mEx = expliciteRe.exec(text)
+    if (mEx) {
+      tauxChange = parseFloat(mEx[1].replace(',', '.'))
+      deviseFacture = mEx[2].toUpperCase()
+    }
+  }
+
+  // Détecter la devise étrangère depuis "Montant total facturé: 71 907,45 EUR / 84 369 USD"
+  if (!deviseFacture) {
+    const devRe = /Montant\s*total\s*factur[eé][^/\n]{0,30}\/[^A-Z]{0,10}(USD|GBP|CHF|CNY|JPY|CAD)/i
+    const mDev = devRe.exec(text)
+    if (mDev) deviseFacture = mDev[1].toUpperCase()
   }
 
   // Sinon dérive depuis les deux valeurs de la DEC
@@ -549,6 +591,7 @@ export function extractDeclarationData(text) {
     representant: extractRepresentant(text),
     exportateur: extractExportateur(text),
     declarant: extractDeclarant(text),
+    liquidationTotale: extractLiquidationTotale(text),
   }
 }
 
