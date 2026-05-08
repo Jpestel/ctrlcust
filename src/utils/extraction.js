@@ -322,18 +322,11 @@ function extractImportateur(text) {
   ])
 }
 
-// Case 14 / REPRESENTANT + DECLARANT
+// Case 14 / REPRESENTANT
 function extractRepresentant(text) {
-  // Cherche d'abord REPRESENTANT explicitement
-  const rep = extractParty(text, [
+  return extractParty(text, [
     'REPRESENTANT\\s*:',
     '(?:\\b14\\s*[\\s\\n.]*)?[Rr]epr[eé]sentant(?:\\s+en\\s+douane)?',
-  ])
-  if (rep) return rep
-  // Fallback sur DECLARANT si représentant vide
-  return extractParty(text, [
-    'DECLARANT\\s*:',
-    '(?:\\b14\\s*[\\s\\n.]*)?[Dd][eé]clarant',
   ])
 }
 
