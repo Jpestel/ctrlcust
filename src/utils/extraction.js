@@ -266,8 +266,8 @@ function findPartyInLines(textAfterLabel, maxLines = 8) {
     if (!/[A-ZÀ-Ÿa-zà-ÿ]{2,}/.test(t)) continue             // doit contenir des lettres
     // Stop si c'est un autre label de case (ex : "14 Déclarant")
     if (/^\d{1,2}\s+[A-ZÀ-Ÿ][A-Za-zÀ-ÿ]{3,}/.test(t) && t.length < 50) break
-    // Stop sur labels connus de la DEC
-    if (/^(?:[Dd]estinataire|[Dd][eé]clarant|[Rr]epr[eé]sentant|[Ee]xp[eé]diteur|[Ee]xportateur|[Aa]gent)\b/i.test(t)) break
+    // Stop sur labels connus de la DEC (y compris PERSONNE A CONTACTER)
+    if (/^(?:PERSONNE\s+A\s+CONTACTER|[Dd]estinataire|[Dd][eé]clarant|[Rr]epr[eé]sentant|[Ee]xp[eé]diteur|[Ee]xportateur|[Aa]gent|IMPORTATEUR|EXPORTATEUR|DECLARANT|REPRESENTANT)\b/i.test(t)) break
     return cleanPartyName(t)
   }
   return null
@@ -289,11 +289,12 @@ function extractParty(text, patterns) {
     const sameLine = /^[ \t]*[:\-][ \t]*([^\n]{2,120})/.exec(after)
     if (sameLine) {
       const raw = sameLine[1].trim()
+      // Si la "valeur" est en fait un autre label → case vide
+      if (/^(?:PERSONNE\s+A\s+CONTACTER|IMPORTATEUR|EXPORTATEUR|DECLARANT|REPRESENTANT)\b/i.test(raw)) return null
       // Retirer le numéro EORI/SIRET collé derrière le nom : "DISTRI CASH ACCESSOIRES - FR383485018"
       const nameOnly = raw.replace(/\s*[-–]\s*[A-Z]{0,2}\d{9,}.*$/i, '').trim()
       const val = cleanPartyName(nameOnly || raw)
       if (isValidPartyName(val)) return val
-      // La ligne existe mais est vide → case vide explicite
       if (raw.length === 0) return null
     }
     // Ligne suivante
