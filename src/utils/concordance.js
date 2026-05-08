@@ -249,7 +249,7 @@ export function buildStep0Concordance(decData, userInput) {
 
     const ecartAbsolu = Math.abs(userValConverti - decVal.valeur)
     const diff = ecartAbsolu / Math.max(userValConverti, decVal.valeur) * 100
-    const status = ecartAbsolu < 0.01 ? 'ok' : diff <= 5 ? 'warning' : 'error'
+    const status = ecartAbsolu <= 0.50 ? 'ok' : diff <= 5 ? 'warning' : 'error'
     const labelConv = userDevise !== deviseRef
       ? `${userValeur.toLocaleString('fr-FR')} ${userDevise} → ${userValConverti.toLocaleString('fr-FR', { maximumFractionDigits: 2 })} ${deviseRef}`
       : `${userValeur.toLocaleString('fr-FR')} ${deviseRef}`
