@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo } from 'react'
+import { useState, useRef, useMemo, useEffect } from 'react'
 import { uid } from '../utils'
 import { extractTextFromPDF, extractDeclarationData } from '../utils/extraction'
 import { buildStep0Concordance } from '../utils/concordance'
@@ -25,6 +25,29 @@ export default function Step0Documentaire({ data, update, goNext }) {
   const [exportateur, setExportateur] = useState(data.exportateur || '')
   const [representant, setRepresentant] = useState(data.representant || '')
   const [declarant, setDeclarant] = useState(data.declarant || '')
+
+  // Labels NC officiels récupérés depuis tarifdouanier.eu pour chaque code SH
+  const [hsLabels, setHsLabels] = useState({})
+
+  useEffect(() => {
+    const articles = decDoc?.data?.articles
+    if (!articles?.length) return
+    articles.forEach(async art => {
+      if (hsLabels[art.code]) return // déjà chargé
+      try {
+        const code8 = art.code.slice(0, 8) // l'API accepte jusqu'à 8 chiffres
+        const res = await fetch(`https://www.tarifdouanier.eu/api/v1/cnSuggest?term=${code8}&lang=fr&year=2026`)
+        const json = await res.json()
+        // La réponse est un tableau, on prend le premier item dont le code correspond
+        const match = json.find(item => item.id && item.id.replace(/\s/g, '').startsWith(code8.slice(0, 6)))
+        if (match?.label) {
+          setHsLabels(prev => ({ ...prev, [art.code]: match.label }))
+        }
+      } catch {
+        // silencieux si pas de réseau
+      }
+    })
+  }, [decDoc])
 
   // Conteneurs (extraits de la DEC, éditables)
   const [conteneurs, setConteneurs] = useState(data.extractedConteneurs || [])
@@ -243,14 +266,23 @@ export default function Step0Documentaire({ data, update, goNext }) {
           </p>
           <div className="articles-table">
             {decDoc.data.articles.map(art => (
-              <div key={art.code} className="article-row">
-                <span className="article-position">#{art.position}</span>
-                <span className="article-code">{art.code}</span>
-                <span className="article-designation">
-                  {art.designation
-                    ? art.designation
-                    : <em style={{ color: 'var(--color-text-muted)' }}>désignation non extraite</em>}
-                </span>
+              <div key={art.code} className="article-row" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.25rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', width: '100%' }}>
+                  <span className="article-position">#{art.position}</span>
+                  <span className="article-code">{art.code}</span>
+                  <span className="article-designation">
+                    {art.designation
+                      ? art.designation
+                      : <em style={{ color: 'var(--color-text-muted)' }}>désignation non extraite</em>}
+                  </span>
+                </div>
+                {/* Label NC officiel depuis tarifdouanier.eu */}
+                <div style={{ paddingLeft: '2.5rem', fontSize: '0.8rem', color: 'var(--color-text-muted)', fontStyle: 'italic' }}>
+                  {hsLabels[art.code]
+                    ? <>🏷 <span style={{ color: 'var(--color-primary)', fontStyle: 'normal' }}>{hsLabels[art.code]}</span></>
+                    : <span>⏳ Chargement nomenclature…</span>
+                  }
+                </div>
               </div>
             ))}
           </div>
