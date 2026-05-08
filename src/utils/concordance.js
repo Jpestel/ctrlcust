@@ -247,8 +247,9 @@ export function buildStep0Concordance(decData, userInput) {
       }
     }
 
-    const diff = Math.abs(userValConverti - decVal.valeur) / Math.max(userValConverti, decVal.valeur) * 100
-    const status = diff <= 1 ? 'ok' : diff <= 5 ? 'warning' : 'error'
+    const ecartAbsolu = Math.abs(userValConverti - decVal.valeur)
+    const diff = ecartAbsolu / Math.max(userValConverti, decVal.valeur) * 100
+    const status = ecartAbsolu < 0.01 ? 'ok' : diff <= 5 ? 'warning' : 'error'
     const labelConv = userDevise !== deviseRef
       ? `${userValeur.toLocaleString('fr-FR')} ${userDevise} → ${userValConverti.toLocaleString('fr-FR', { maximumFractionDigits: 2 })} ${deviseRef}`
       : `${userValeur.toLocaleString('fr-FR')} ${deviseRef}`
@@ -266,7 +267,7 @@ export function buildStep0Concordance(decData, userInput) {
         status,
         message: status === 'ok'
           ? 'Concordant'
-          : `Écart : ${diff.toFixed(1)}% (${Math.abs(userValConverti - decVal.valeur).toLocaleString('fr-FR', { maximumFractionDigits: 0 })} ${deviseRef})`,
+          : `Écart : ${ecartAbsolu.toLocaleString('fr-FR', { maximumFractionDigits: 2 })} ${deviseRef} (${diff.toFixed(2)}%)`,
       }],
     })
   }
