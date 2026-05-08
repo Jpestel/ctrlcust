@@ -261,9 +261,19 @@ export default function App() {
       </main>
 
       <footer className="app-footer">
-        <div>
+        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
           {step > 1 && (
             <button className="btn btn-secondary" onClick={goPrev}>← Précédent</button>
+          )}
+          {step > 0 && (
+            <button
+              className="btn btn-ghost"
+              onClick={() => setStep(0)}
+              title="Revenir au contrôle documentaire"
+              style={{ fontSize: '0.82rem' }}
+            >
+              📋 Revoir documentaire
+            </button>
           )}
         </div>
         <div>
