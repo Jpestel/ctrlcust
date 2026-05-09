@@ -588,6 +588,21 @@ hr.divider { border: none; border-top: 1.5px solid var(--border); margin: 1.5rem
 .phrase-item:last-child { border-bottom: none; }
 .phrase-item:hover { background: var(--primary-faint); }
 
+/* Phrases avec checkbox — checkbox à gauche, texte au milieu, ✕ à droite */
+.phrase-item-check {
+  display: flex;
+  flex-direction: row !important;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+}
+.phrase-item-check:hover { background: var(--primary-faint); }
+.phrase-item-check input[type="checkbox"] { margin-top: 0.2rem; flex-shrink: 0; }
+.phrase-item-check .phrase-check-text { flex: 1; font-size: 0.82rem; line-height: 1.45; }
+.phrase-item-check .phrase-check-del { flex-shrink: 0; background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 0 0.25rem; }
+
 .phrase-text {
   font-size: 0.85rem;
   color: var(--text);
