@@ -283,9 +283,17 @@ export default function Step0Documentaire({ data, update, goNext }) {
           </div>
           {error && <div className="alert alert-error" style={{ marginTop: '0.5rem' }}>{error}</div>}
           {decDoc?.data?.mrn && (
-            <div style={{ marginTop: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span className="form-label" style={{ marginBottom: 0 }}>N° MRN :</span>
-              <code className="mrn-code">{decDoc.data.mrn}</code>
+            <div style={{ marginTop: '0.75rem', display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+              {decDoc.data.crn && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span className="form-label" style={{ marginBottom: 0 }}>N° CRN :</span>
+                  <code className="mrn-code">{decDoc.data.crn}</code>
+                </div>
+              )}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <span className="form-label" style={{ marginBottom: 0 }}>N° MRN :</span>
+                <code className="mrn-code">{decDoc.data.mrn}</code>
+              </div>
             </div>
           )}
         </div>

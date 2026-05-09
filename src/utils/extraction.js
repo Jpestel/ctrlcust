@@ -345,6 +345,14 @@ function extractDeclarant(text) {
   ])
 }
 
+function extractCRN(text) {
+  const m = /N[°o]\s*d[eé]claration\s*\(CRN\)\s*[:#]?\s*([A-Z0-9]{10,25})/i.exec(text)
+  if (m) return m[1].trim()
+  // Fallback : CRN seul
+  const m2 = /\bCRN\s*[:#]?\s*([A-Z0-9]{10,25})/i.exec(text)
+  return m2 ? m2[1].trim() : null
+}
+
 function extractMRN(text) {
   let m = /MRN\s*[:#]?\s*([A-Z0-9]{17,22})/i.exec(text)
   if (m) return m[1].trim()
@@ -608,6 +616,7 @@ export function extractDeclarationData(text) {
 
   return {
     mrn: extractMRN(text),
+    crn: extractCRN(text),
     articles: articlesData,
     poidsBrut: extractDecGrossWeight(text),
     nombreColis,

@@ -35,6 +35,7 @@ const INITIAL_DATA = {
   numeroDeclaration: '',
   dateControle: '',
   heureControle: '',
+  heureFinControle: '',
   lieuControle: 'TDF',
   lieuControleLibre: '',
   conteneurs: [],

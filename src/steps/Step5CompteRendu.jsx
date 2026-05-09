@@ -88,24 +88,37 @@ function genVisiteConteneur(conteneur, ctrl, plombBL, date, isTerminal) {
   return t
 }
 
+function resolveLieu(value) {
+  const LIEUX_MAP = {
+    'TDF': 'Terminal De France - Aire de visite PELICAN',
+    'MTL': 'MTL',
+  }
+  return LIEUX_MAP[value] || value || 'Non renseigné'
+}
+
 function generateTexte(data) {
   const {
     flux, nomAgent, numeroDeclaration,
-    dateControle, heureControle, lieuControle, lieuControleLibre,
+    dateControle, heureControle, heureFinControle, lieuControle, lieuControleLibre,
     dateControleDepot, heureControleDepot, lieuControleDepot,
     conteneurs, plombsBL, controles, controlesDepot,
     hasVisiteDepot, importateur, representant,
+    docDeclaration,
   } = data
 
   const isTerminal = lieuControle !== 'libre'
-  const lieu1 = lieuControle === 'libre' ? lieuControleLibre : lieuControle
+  const lieu1 = lieuControle === 'libre' ? lieuControleLibre : resolveLieu(lieuControle)
   const date1 = formatDate(dateControle) || '__/__/____'
   const heure1 = heureControle || '__:__'
+  const heureFin = heureFinControle || null
   const date2 = formatDate(dateControleDepot) || '__/__/____'
   const heure2 = heureControleDepot || '__:__'
-  const lieu2 = lieuControleDepot || 'Non renseigné'
+  const lieu2 = lieuControleDepot ? resolveLieu(lieuControleDepot) : 'Non renseigné'
   const agent = nomAgent || '[Nom de l\'agent]'
-  const decl = numeroDeclaration || '[N° de déclaration]'
+
+  // Numéro de déclaration : CRN extrait de la DEC en priorité, sinon saisie manuelle
+  const crn = docDeclaration?.data?.crn || numeroDeclaration || '[N° de déclaration]'
+
   const fluxLabel = flux === 'import' ? "d'importation" : "d'exportation"
   const importateurStr = importateur || '[Importateur]'
   const representantStr = representant || '[Représentant en douane]'
@@ -114,7 +127,7 @@ function generateTexte(data) {
   t += `COMPTE RENDU DE VISITE PHYSIQUE\n`
   t += `${'='.repeat(52)}\n\n`
   t += `Nature        : Contrôle physique à l'${flux.toUpperCase()}\n`
-  t += `Déclaration   : ${decl}\n`
+  t += `Déclaration   : ${crn}\n`
   t += `Importateur   : ${importateurStr}\n`
   t += `Représentant  : ${representantStr}\n`
   t += `Agent         : ${agent}\n\n`
@@ -122,11 +135,11 @@ function generateTexte(data) {
   const nbVisites = isTerminal && hasVisiteDepot ? 2 : 1
   if (nbVisites === 2) {
     t += `Ce contrôle comporte deux visites physiques :\n`
-    t += `  • Visite 1 — Terminal ${lieu1} — le ${date1} à ${heure1}\n`
+    t += `  • Visite 1 — ${lieu1} — le ${date1} à ${heure1}${heureFin ? ` — fin à ${heureFin}` : ''}\n`
     t += `  • Visite 2 — Magasin (dépotage) — ${lieu2} — le ${date2} à ${heure2}\n\n`
   } else {
-    t += `Date          : ${date1} à ${heure1}\n`
-    t += `Lieu          : ${lieu1 || 'Non renseigné'}\n\n`
+    t += `Date          : ${date1} à ${heure1}${heureFin ? ` — fin à ${heureFin}` : ''}\n`
+    t += `Lieu          : ${lieu1}\n\n`
   }
 
   t += `Je soussigné(e), ${agent}, contrôleur des douanes affecté(e) au bureau du Havre Port, certifie avoir procédé au contrôle physique des marchandises faisant l'objet de la déclaration ${fluxLabel} n° ${decl}, déposée pour le compte de ${importateurStr} par ${representantStr}.\n\n`

@@ -2,10 +2,16 @@ import { useState } from 'react'
 import { uid } from '../utils'
 
 const LIEUX = [
-  { label: 'TDF', value: 'TDF' },
+  { label: 'TDF — Terminal De France - Aire de visite PELICAN', value: 'TDF' },
   { label: 'MTL', value: 'MTL' },
   { label: 'Autre (saisie libre)', value: 'libre' },
 ]
+
+// Résout la valeur stockée en libellé complet pour le compte rendu
+export function resolveLieu(value) {
+  const found = LIEUX.find(l => l.value === value)
+  return found && value !== 'libre' ? found.label : value
+}
 
 export default function Step1Init({ data, update, isTerminal }) {
   const [newNum, setNewNum] = useState('')

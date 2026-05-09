@@ -577,6 +577,38 @@ export default function Step3Terrain({ data, update, isTerminal }) {
           onUpdatePlombBL={() => {}}
         />
       )}
+
+      {/* Heure de fin du contrôle */}
+      <div style={{
+        marginTop: '1.5rem',
+        borderTop: '1px solid var(--color-border)',
+        paddingTop: '1rem',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '1rem',
+        flexWrap: 'wrap',
+      }}>
+        <label style={{ fontWeight: 600, fontSize: '0.9rem', whiteSpace: 'nowrap' }}>
+          🕐 Heure de fin du contrôle
+        </label>
+        <input
+          type="time"
+          value={data.heureFinControle || ''}
+          onChange={e => update({ heureFinControle: e.target.value })}
+          style={{ fontFamily: 'monospace', fontSize: '1rem', padding: '0.3rem 0.6rem', borderRadius: '0.4rem', border: '1px solid var(--color-border)' }}
+        />
+        {data.heureControle && data.heureFinControle && (
+          <span style={{ fontSize: '0.82rem', color: 'var(--color-text-muted)' }}>
+            Durée : {(() => {
+              const [dh, dm] = data.heureControle.split(':').map(Number)
+              const [fh, fm] = data.heureFinControle.split(':').map(Number)
+              const diff = (fh * 60 + fm) - (dh * 60 + dm)
+              if (diff <= 0) return '—'
+              return `${Math.floor(diff / 60)}h${String(diff % 60).padStart(2, '0')}`
+            })()}
+          </span>
+        )}
+      </div>
     </div>
   )
 }
