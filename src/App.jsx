@@ -129,7 +129,8 @@ export default function App() {
         .then(r => r.json())
         .then(imported => {
           if (imported && typeof imported === 'object') {
-            setData({ ...INITIAL_DATA, ...imported })
+            const photos = restorePhotos(imported.photos)
+            setData({ ...INITIAL_DATA, ...imported, photos })
             setStep(5)
             window.history.replaceState({}, '', window.location.pathname)
           }
