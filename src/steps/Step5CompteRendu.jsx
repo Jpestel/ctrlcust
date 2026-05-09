@@ -100,9 +100,6 @@ function genVisiteConteneur(conteneur, ctrl, plombBL, date, isTerminal, heureFin
     t += `Pas de prélèvement d'échantillon.\n\n`
   }
 
-  // Il n'y a pas d'autres références accessibles
-  t += `Il n'y a pas d'autres références accessibles aux portes du conteneur.\n\n`
-
   if (isTerminal && ctrl.nouveauPlomb) {
     const fin = heureFinControle ? heureFinControle.replace(':', 'h') : '__h__'
     t += `Je fais refermer le conteneur et apposer un nouveau plomb commercial n° ${ctrl.nouveauPlomb} reconnu intègre. Fin des opérations de visite à ${fin}.\n\n`
