@@ -105,6 +105,10 @@ body {
   flex-shrink: 0; transition: all 0.2s;
 }
 .step-circle.active { background: var(--primary); border-color: var(--primary); color: white; }
+.step-circle.clickable { cursor: pointer; }
+.step-circle.clickable:hover { opacity: 0.8; transform: scale(1.1); transition: transform 0.15s; }
+.step-label.clickable { cursor: pointer; }
+.step-label.clickable:hover { text-decoration: underline; }
 .step-circle.done { background: var(--success); border-color: var(--success); color: white; }
 .step-label { font-size: 0.78rem; font-weight: 500; color: var(--text-light); white-space: nowrap; }
 .step-label.active { color: var(--primary); font-weight: 600; }

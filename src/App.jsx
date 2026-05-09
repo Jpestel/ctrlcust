@@ -259,7 +259,7 @@ export default function App() {
         </div>
       </header>
 
-      <StepIndicator steps={steps} currentStep={step} />
+      <StepIndicator steps={steps} currentStep={step} onStepClick={setStep} />
 
       <main className="app-main">
         {step === 0 && <Step0Documentaire key={`s0-${importKey}`} data={data} update={update} goNext={goNext} />}
