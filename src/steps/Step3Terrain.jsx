@@ -8,6 +8,7 @@ const TYPES_CONDITIONNEMENT = [
   { value: 'sac', label: 'Sac' },
   { value: 'caisse', label: 'Caisse / Colis bois' },
   { value: 'vrac', label: 'Vrac (directement dans le conteneur)' },
+  { value: 'article', label: 'Article isolé (pneu, pièce, équipement…)' },
   { value: 'unite', label: 'Unité isolée' },
   { value: 'autre', label: 'Autre' },
 ]
@@ -19,6 +20,7 @@ function UniteCard({ unite, index, onUpdate, onRemove, dateControle }) {
 
   const typeLabel = TYPES_CONDITIONNEMENT.find(t => t.value === unite.type)?.label || 'Unité'
   const isVrac = unite.type === 'vrac'
+  const isArticle = unite.type === 'article'
 
   return (
     <div className="carton-card">
@@ -53,18 +55,22 @@ function UniteCard({ unite, index, onUpdate, onRemove, dateControle }) {
         <label>
           {isVrac
             ? 'Description de la marchandise en vrac'
-            : `Description des mentions sur le ${typeLabel.toLowerCase()}`}
+            : isArticle
+              ? 'Description / identification de l\'article'
+              : `Description des mentions sur le ${typeLabel.toLowerCase()}`}
         </label>
         <textarea
           placeholder={isVrac
             ? "Décrivez la nature, le volume, l'état apparent de la marchandise en vrac..."
-            : 'Décrivez les inscriptions, marquages, étiquettes...'}
+            : isArticle
+              ? 'ex. Pneu neuf référence TX2R1507, dimensions 185/65R15, marquages conformes...'
+              : 'Décrivez les inscriptions, marquages, étiquettes...'}
           value={unite.descriptionMentions}
           onChange={e => onUpdate({ descriptionMentions: e.target.value })}
         />
       </div>
 
-      {!isVrac && (
+      {!isVrac && !isArticle && (
         <div className="form-group">
           <label>Statut à la fermeture</label>
           <div className="radio-group">
@@ -92,7 +98,7 @@ function UniteCard({ unite, index, onUpdate, onRemove, dateControle }) {
         </div>
       )}
 
-      {!isVrac && unite.mentionFermeture === 'prelevement_examen' && (
+      {!isVrac && !isArticle && unite.mentionFermeture === 'prelevement_examen' && (
         <div className="form-group">
           <label>Détail du prélèvement pour examen</label>
           <textarea

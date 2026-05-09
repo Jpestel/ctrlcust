@@ -40,25 +40,36 @@ function genVisiteConteneur(conteneur, ctrl, plombBL, date, isTerminal) {
     t += `VÉRIFICATION DES MARCHANDISES :\n\n`
     ctrl.cartons.forEach((unite, i) => {
       const type = unite.type || 'carton'
-      const typesLabels = {
-        carton: 'Carton', palette: 'Palette', sac: 'Sac',
-        caisse: 'Caisse / Colis bois', vrac: 'Vrac', unite: 'Unité isolée', autre: 'Unité'
+      const typesConfig = {
+        carton:  { label: 'Carton',              article: 'le',  labelMin: 'carton',  feminin: false },
+        palette: { label: 'Palette',             article: 'la',  labelMin: 'palette', feminin: true  },
+        sac:     { label: 'Sac',                 article: 'le',  labelMin: 'sac',     feminin: false },
+        caisse:  { label: 'Caisse / Colis bois', article: 'la',  labelMin: 'caisse',  feminin: true  },
+        vrac:    { label: 'Vrac',                article: null,  labelMin: 'vrac',    feminin: false },
+        article: { label: 'Article',             article: "l'",  labelMin: 'article', feminin: false, isArticle: true },
+        unite:   { label: 'Unité isolée',        article: "l'",  labelMin: 'unité',   feminin: true  },
+        autre:   { label: 'Unité',               article: "l'",  labelMin: 'unité',   feminin: true  },
       }
-      const typeLabel = typesLabels[type] || 'Unité'
+      const cfg = typesConfig[type] || typesConfig.autre
       const isVrac = type === 'vrac'
+      const isArticle = cfg.isArticle === true
 
       if (isVrac) {
         t += `Marchandise en vrac (unité n°${i + 1}) :\n`
         if (unite.descriptionMentions) t += `${unite.descriptionMentions}\n`
         t += `\n`
+      } else if (isArticle) {
+        t += `${cfg.label} n°${i + 1}${unite.reference ? ` — Référence : ${unite.reference}` : ''}\n`
+        if (unite.descriptionMentions) t += `${unite.descriptionMentions}\n`
+        t += `Après examen visuel, ${cfg.article}${cfg.labelMin} a été identifié et reconnu conforme à la déclaration. Mention apposée : "Visite douane — ${date} — Vu et identifié".\n\n`
       } else {
-        t += `${typeLabel} n°${i + 1}${unite.reference ? ` — Référence : ${unite.reference}` : ''}\n`
+        t += `${cfg.label} n°${i + 1}${unite.reference ? ` — Référence : ${unite.reference}` : ''}\n`
         if (unite.descriptionMentions) t += `${unite.descriptionMentions}\n`
         if (unite.mentionFermeture === 'complet') {
-          t += `Après ouverture et vérification du contenu, le ${typeLabel.toLowerCase()} a été refermé. Mention apposée : "Visite douane — ${date} — Complet".\n\n`
+          t += `Après ouverture et vérification du contenu, ${cfg.article} ${cfg.labelMin} a été refermé${cfg.feminin ? 'e' : ''}. Mention apposée : "Visite douane — ${date} — Complet".\n\n`
         } else {
           const detail = unite.detailPrelevementExamen ? ` (${unite.detailPrelevementExamen})` : ''
-          t += `Après ouverture et vérification, un prélèvement pour examen a été effectué${detail}. Le ${typeLabel.toLowerCase()} a été refermé avec mention du prélèvement. Les articles prélevés seront restitués au RDE après examen.\n\n`
+          t += `Après ouverture et vérification, un prélèvement pour examen a été effectué${detail}. ${cfg.article.charAt(0).toUpperCase() + cfg.article.slice(1)} ${cfg.labelMin} a été refermé${cfg.feminin ? 'e' : ''} avec mention du prélèvement. Les articles prélevés seront restitués au RDE après examen.\n\n`
         }
       }
     })
