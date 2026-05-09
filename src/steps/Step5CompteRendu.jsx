@@ -65,7 +65,9 @@ function genVisiteConteneur(conteneur, ctrl, plombBL, date, isTerminal) {
         if (unite.descriptionMentions) t += `${unite.descriptionMentions}\n`
         if (unite.mentionFermeture === 'complet') {
           t += `Je fais refermer ${cfg.article} ${cfg.labelMin} et apposer dessus les mentions "Visite douane" et la date ${date}.\n\n`
-        } else {
+        } else if (unite.mentionFermeture === 'libre' && unite.mentionLibre) {
+          t += `Je fais refermer ${cfg.article} ${cfg.labelMin} et apposer la mention : "${unite.mentionLibre}".\n\n`
+        } else if (unite.mentionFermeture === 'prelevement_examen') {
           const detail = unite.detailPrelevementExamen ? ` (${unite.detailPrelevementExamen})` : ''
           t += `Un prélèvement pour examen a été effectué${detail}. Je fais refermer ${cfg.article} ${cfg.labelMin} avec mention du prélèvement. Les articles prélevés seront restitués au RDE après examen.\n\n`
         }

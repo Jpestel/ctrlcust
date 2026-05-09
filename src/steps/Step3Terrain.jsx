@@ -160,11 +160,31 @@ function UniteCard({ unite, index, onUpdate, onRemove, dateControle, crn, articl
               <input
                 type="radio"
                 name={`fermeture-${unite.id}`}
+                value="aucun"
+                checked={!unite.mentionFermeture || unite.mentionFermeture === 'aucun'}
+                onChange={() => onUpdate({ mentionFermeture: 'aucun' })}
+              />
+              Non renseigné
+            </label>
+            <label className="radio-option">
+              <input
+                type="radio"
+                name={`fermeture-${unite.id}`}
                 value="complet"
                 checked={unite.mentionFermeture === 'complet'}
                 onChange={() => onUpdate({ mentionFermeture: 'complet' })}
               />
-              Complet — <em style={{ fontWeight: 400 }}>mention "Visite douane — {dateStr} — Complet"</em>
+              Complet
+            </label>
+            <label className="radio-option">
+              <input
+                type="radio"
+                name={`fermeture-${unite.id}`}
+                value="libre"
+                checked={unite.mentionFermeture === 'libre'}
+                onChange={() => onUpdate({ mentionFermeture: 'libre' })}
+              />
+              Mention personnalisée
             </label>
             <label className="radio-option">
               <input
@@ -177,6 +197,22 @@ function UniteCard({ unite, index, onUpdate, onRemove, dateControle, crn, articl
               Prélèvement pour examen
             </label>
           </div>
+
+          {unite.mentionFermeture === 'complet' && (
+            <div style={{ marginTop: '0.5rem', fontSize: '0.82rem', color: 'var(--color-text-muted)', fontStyle: 'italic' }}>
+              Mention apposée : "Visite douane — {dateStr} — Complet"
+            </div>
+          )}
+
+          {unite.mentionFermeture === 'libre' && (
+            <input
+              type="text"
+              style={{ marginTop: '0.5rem' }}
+              placeholder={`ex. "Visite douane — ${dateStr} — Vu conforme"`}
+              value={unite.mentionLibre || ''}
+              onChange={e => onUpdate({ mentionLibre: e.target.value })}
+            />
+          )}
         </div>
       )}
 
