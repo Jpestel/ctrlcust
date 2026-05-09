@@ -107,9 +107,36 @@ function resolveLieu(value) {
   return LIEUX_MAP[value] || value || 'Non renseigné'
 }
 
+function resolveGrade(value, libre) {
+  const map = {
+    agent_constatation: 'agent de constatation des douanes',
+    controleur_2: 'contrôleur de 2ème classe des douanes',
+    controleur_1: 'contrôleur de 1ère classe des douanes',
+    inspecteur: 'inspecteur des douanes',
+    inspecteur_principal: 'inspecteur principal des douanes',
+    libre: libre || '',
+  }
+  return map[value] || value || 'contrôleur des douanes'
+}
+
+function genFonctionCommis(ctrl, importateurStr, representantStr) {
+  const prenom = ctrl?.commis?.prenom || ''
+  const nom = ctrl?.commis?.nom || ''
+  const nomComplet = `${prenom} ${nom}`.trim() || '[Commis]'
+  const qualite = ctrl?.commis?.qualite || 'commis'
+  const rep = representantStr && representantStr !== 'Case vide' ? representantStr : importateurStr
+
+  if (qualite === 'coursier') {
+    return `${nomComplet}, coursier mandaté par la société ${rep} pour effectuer en son nom les opérations de visite pour le compte de l'importateur ${importateurStr}`
+  }
+  return `${nomComplet}, commis en douane de la société ${rep}, effectuant les opérations de visite pour le compte de l'importateur ${importateurStr}`
+}
+
 function generateTexte(data) {
   const {
-    flux, nomAgent, numeroDeclaration,
+    flux, nomAgent, civiliteAgent, gradeAgent, gradeAgentLibre,
+    hasSecondAgent, nomAgent2, civiliteAgent2, gradeAgent2, gradeAgent2Libre,
+    numeroDeclaration,
     dateControle, heureControle, heureFinControle, lieuControle, lieuControleLibre,
     dateControleDepot, heureControleDepot, lieuControleDepot,
     conteneurs, plombsBL, controles, controlesDepot,
@@ -118,63 +145,80 @@ function generateTexte(data) {
   } = data
 
   const isTerminal = lieuControle !== 'libre'
-  const lieu1 = lieuControle === 'libre' ? lieuControleLibre : resolveLieu(lieuControle)
+  const lieu1 = lieuControle === 'libre' ? (lieuControleLibre || 'Non renseigné') : resolveLieu(lieuControle)
+  const lieu1Court = lieuControle === 'libre' ? (lieuControleLibre || '') : lieuControle
   const date1 = formatDate(dateControle) || '__/__/____'
-  const heure1 = heureControle || '__:__'
-  const heureFin = heureFinControle || null
+  const heure1 = heureControle ? heureControle.replace(':', 'h') : '__h__'
+  const heureFin = heureFinControle ? heureFinControle.replace(':', 'h') : null
   const date2 = formatDate(dateControleDepot) || '__/__/____'
-  const heure2 = heureControleDepot || '__:__'
+  const heure2 = heureControleDepot ? heureControleDepot.replace(':', 'h') : '__h__'
   const lieu2 = lieuControleDepot ? resolveLieu(lieuControleDepot) : 'Non renseigné'
-  const agent = nomAgent || '[Nom de l\'agent]'
 
-  // Numéro de déclaration : CRN extrait de la DEC en priorité, sinon saisie manuelle
   const crn = docDeclaration?.data?.crn || numeroDeclaration || '[N° de déclaration]'
-
   const fluxLabel = flux === 'import' ? "d'importation" : "d'exportation"
   const importateurStr = importateur || '[Importateur]'
-  const representantStr = representant || '[Représentant en douane]'
+  const representantStr = representant && representant !== 'Case vide' ? representant : importateurStr
+
+  // Identité agent(s)
+  const civ1 = civiliteAgent || 'M.'
+  const agent1Nom = nomAgent || '[Prénom NOM]'
+  const grade1 = resolveGrade(gradeAgent, gradeAgentLibre)
+  const deuxAgents = hasSecondAgent && nomAgent2
+  const civ2 = civiliteAgent2 || 'M.'
+  const agent2Nom = nomAgent2 || ''
+  const grade2 = resolveGrade(gradeAgent2, gradeAgent2Libre)
+
+  const sujet = deuxAgents ? 'Nous' : 'Je'
+  const moi = deuxAgents ? 'nous' : 'me'
+  const rendons = deuxAgents ? 'rendons' : 'rends'
+  const porteur = deuxAgents ? "porteurs de nos commissions d'emploi" : "porteur de ma commission d'emploi"
+  const munis = deuxAgents ? 'munis de nos équipements de protection individuelle' : 'muni de mes équipements de protection individuelle'
+  const revetu = deuxAgents ? 'revêtus' : 'revêtu'
+
+  let identiteAgents = ''
+  if (deuxAgents) {
+    identiteAgents = `${sujet}, ${civ1} ${agent1Nom} et ${civ2} ${agent2Nom}, respectivement ${grade1} et ${grade2} du Havre secteur OCEAN`
+  } else {
+    identiteAgents = `${sujet}, ${civ1} ${agent1Nom}, ${grade1} du Havre secteur OCEAN`
+  }
+
+  const premierCtrl = controles?.[0]
+  const nomCommis = `${premierCtrl?.commis?.prenom || ''} ${premierCtrl?.commis?.nom || ''}`.trim()
 
   let t = ''
-  t += `COMPTE RENDU DE VISITE PHYSIQUE\n`
+  t += `DÉROULEMENT DU CONTRÔLE PHYSIQUE\n`
   t += `${'='.repeat(52)}\n\n`
-  t += `Nature        : Contrôle physique à l'${flux.toUpperCase()}\n`
-  t += `Déclaration   : ${crn}\n`
-  t += `Importateur   : ${importateurStr}\n`
-  t += `Représentant  : ${representantStr}\n`
-  t += `Agent         : ${agent}\n\n`
+  t += `Personne présente au contrôle : ${nomCommis || '[Non renseigné]'}\n`
+  t += `Fonction                       : ${genFonctionCommis(premierCtrl, importateurStr, representantStr)}\n\n`
+  t += `Date et heure de début : ${date1} à ${heure1}\n`
+  if (heureFin) t += `Date et heure de fin   : ${date1} à ${heureFin}\n`
+  t += `Déclaration            : ${crn}\n\n`
 
-  const nbVisites = isTerminal && hasVisiteDepot ? 2 : 1
-  if (nbVisites === 2) {
-    t += `Ce contrôle comporte deux visites physiques :\n`
-    t += `  • Visite 1 — ${lieu1} — le ${date1} à ${heure1}${heureFin ? ` — fin à ${heureFin}` : ''}\n`
-    t += `  • Visite 2 — Magasin (dépotage) — ${lieu2} — le ${date2} à ${heure2}\n\n`
-  } else {
-    t += `Date          : ${date1} à ${heure1}${heureFin ? ` — fin à ${heureFin}` : ''}\n`
-    t += `Lieu          : ${lieu1}\n\n`
+  const nouveauxScelles = (conteneurs || [])
+    .map(c => controles?.find(ct => ct.conteneurId === c.id)?.nouveauPlomb)
+    .filter(Boolean)
+  if (nouveauxScelles.length > 0) {
+    t += `Nouveau(x) numéro(s) de scellé : ${nouveauxScelles.join(' / ')}\n\n`
   }
 
-  t += `Je soussigné(e), ${agent}, contrôleur des douanes affecté(e) au bureau du Havre Port, certifie avoir procédé au contrôle physique des marchandises faisant l'objet de la déclaration ${fluxLabel} n° ${crn}, déposée pour le compte de ${importateurStr} par ${representantStr}.\n\n`
+  t += `${'─'.repeat(52)}\n`
+  t += `DESCRIPTION ET INSPECTION DES MARCHANDISES\n`
+  t += `${'─'.repeat(52)}\n\n`
 
-  // ── VISITE 1 (terminal ou dépotage seul) ──
-  if (nbVisites === 2) {
-    t += `${'═'.repeat(52)}\n`
-    t += `VISITE 1 — TERMINAL ${lieu1} — ${date1} à ${heure1}\n`
-    t += `${'═'.repeat(52)}\n\n`
+  t += `Le ${date1} à ${heure1}, ${identiteAgents}, ${moi} ${rendons} en fonction de visite, ${porteur}, en tenue civile ${revetu} de la chasuble sérigraphiée "Douane" et ${munis}, sur le lieu de contrôle situé à ${lieu1Court || lieu1} afin de procéder au contrôle des marchandises dédouanées sur la déclaration ${fluxLabel} n° ${crn}.\n\n`
+  t += `Les opérations de visite se déroulent en présence constante et effective de ${nomCommis || '[Commis/Coursier]'}.\n\n`
+
+  for (const conteneur of conteneurs || []) {
+    const ctrl = controles?.find(c => c.conteneurId === conteneur.id)
+    t += genVisiteConteneur(conteneur, ctrl, plombsBL?.[conteneur.id], date1, isTerminal)
   }
 
-  for (const conteneur of conteneurs) {
-    const ctrl = controles.find(c => c.conteneurId === conteneur.id)
-    t += genVisiteConteneur(conteneur, ctrl, plombsBL[conteneur.id], date1, isTerminal)
-  }
-
-  // ── VISITE 2 (dépotage, si applicable) ──
   if (isTerminal && hasVisiteDepot && (controlesDepot || []).length > 0) {
     t += `${'═'.repeat(52)}\n`
-    t += `VISITE 2 — MAGASIN (DÉPOTAGE) — ${lieu2} — ${date2} à ${heure2}\n`
+    t += `VISITE 2 — DÉPOTAGE — ${lieu2} — ${date2} à ${heure2}\n`
     t += `${'═'.repeat(52)}\n\n`
-    t += `Suite au contrôle au terminal ${lieu1} du ${date1}, la marchandise a fait l'objet d'un dépotage. Une seconde visite physique a été effectuée au magasin.\n\n`
-
-    for (const conteneur of conteneurs) {
+    t += `Suite au contrôle au terminal ${lieu1Court} du ${date1}, la marchandise a fait l'objet d'un dépotage en magasin. Une seconde visite physique a été effectuée.\n\n`
+    for (const conteneur of conteneurs || []) {
       const ctrl = (controlesDepot || []).find(c => c.conteneurId === conteneur.id)
       t += genVisiteConteneur(conteneur, ctrl, null, date2, false)
     }
@@ -182,7 +226,8 @@ function generateTexte(data) {
 
   t += `${'='.repeat(52)}\n`
   t += `Fait au Havre, le ${date1}.\n`
-  if (nomAgent) t += `\n${nomAgent}`
+  if (nomAgent) t += `\n${civ1} ${agent1Nom}`
+  if (deuxAgents) t += `\n${civ2} ${agent2Nom}`
 
   return t
 }

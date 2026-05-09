@@ -8,9 +8,18 @@ const LIEUX = [
 ]
 
 // Résout la valeur stockée en libellé complet pour le compte rendu
-export function resolveLieu(value) {
-  const found = LIEUX.find(l => l.value === value)
-  return found && value !== 'libre' ? found.label : value
+const GRADES = [
+  { value: 'agent_constatation', label: 'Agent de constatation' },
+  { value: 'controleur_2', label: 'Contrôleur de 2ème classe' },
+  { value: 'controleur_1', label: 'Contrôleur de 1ère classe' },
+  { value: 'inspecteur', label: 'Inspecteur' },
+  { value: 'inspecteur_principal', label: 'Inspecteur principal' },
+  { value: 'libre', label: 'Autre (saisie libre)' },
+]
+
+export function resolveGrade(value, gradeLibre) {
+  if (value === 'libre') return gradeLibre || ''
+  return GRADES.find(g => g.value === value)?.label || value
 }
 
 export default function Step1Init({ data, update, isTerminal }) {
@@ -56,7 +65,18 @@ export default function Step1Init({ data, update, isTerminal }) {
       <div className="card">
         <div className="card-title">Informations générales</div>
 
+        {/* Agent principal */}
+        <div style={{ marginBottom: '0.5rem', fontSize: '0.82rem', fontWeight: 600, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+          Agent vérificateur
+        </div>
         <div className="form-row">
+          <div className="form-group" style={{ maxWidth: '100px' }}>
+            <label>Civilité</label>
+            <select value={data.civiliteAgent || 'M.'} onChange={e => update({ civiliteAgent: e.target.value })}>
+              <option value="M.">M.</option>
+              <option value="Mme">Mme</option>
+            </select>
+          </div>
           <div className="form-group">
             <label>Nom de l'agent</label>
             <input
@@ -66,16 +86,71 @@ export default function Step1Init({ data, update, isTerminal }) {
               onChange={e => update({ nomAgent: e.target.value })}
             />
           </div>
+        </div>
+        <div className="form-group">
+          <label>Grade</label>
+          <select value={data.gradeAgent || 'controleur_2'} onChange={e => update({ gradeAgent: e.target.value })}>
+            {GRADES.map(g => <option key={g.value} value={g.value}>{g.label}</option>)}
+          </select>
+        </div>
+        {data.gradeAgent === 'libre' && (
           <div className="form-group">
-            <label>Numéro de déclaration</label>
-            <input
-              type="text"
-              placeholder="ex. 24FR076000XXXXXXX0"
-              value={data.numeroDeclaration}
-              onChange={e => update({ numeroDeclaration: e.target.value.toUpperCase() })}
-              style={{ fontFamily: 'monospace' }}
-            />
+            <label>Grade (saisie libre)</label>
+            <input type="text" placeholder="ex. Agent principal" value={data.gradeAgentLibre || ''} onChange={e => update({ gradeAgentLibre: e.target.value })} />
           </div>
+        )}
+
+        {/* Second agent */}
+        <div style={{ marginTop: '0.75rem', marginBottom: '0.5rem' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontWeight: 600 }}>
+            <input
+              type="checkbox"
+              checked={data.hasSecondAgent || false}
+              onChange={e => update({ hasSecondAgent: e.target.checked })}
+            />
+            Contrôle effectué par deux agents
+          </label>
+        </div>
+        {data.hasSecondAgent && (
+          <div style={{ borderLeft: '3px solid var(--color-border)', paddingLeft: '1rem', marginBottom: '0.75rem' }}>
+            <div style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--color-text-muted)', marginBottom: '0.5rem', textTransform: 'uppercase' }}>Second agent</div>
+            <div className="form-row">
+              <div className="form-group" style={{ maxWidth: '100px' }}>
+                <label>Civilité</label>
+                <select value={data.civiliteAgent2 || 'M.'} onChange={e => update({ civiliteAgent2: e.target.value })}>
+                  <option value="M.">M.</option>
+                  <option value="Mme">Mme</option>
+                </select>
+              </div>
+              <div className="form-group">
+                <label>Nom</label>
+                <input type="text" placeholder="Prénom NOM" value={data.nomAgent2 || ''} onChange={e => update({ nomAgent2: e.target.value })} />
+              </div>
+            </div>
+            <div className="form-group">
+              <label>Grade</label>
+              <select value={data.gradeAgent2 || 'controleur_2'} onChange={e => update({ gradeAgent2: e.target.value })}>
+                {GRADES.map(g => <option key={g.value} value={g.value}>{g.label}</option>)}
+              </select>
+            </div>
+            {data.gradeAgent2 === 'libre' && (
+              <div className="form-group">
+                <label>Grade (saisie libre)</label>
+                <input type="text" placeholder="ex. Agent principal" value={data.gradeAgent2Libre || ''} onChange={e => update({ gradeAgent2Libre: e.target.value })} />
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className="form-group">
+          <label>Numéro de déclaration</label>
+          <input
+            type="text"
+            placeholder="ex. 24FR076000XXXXXXX0"
+            value={data.numeroDeclaration}
+            onChange={e => update({ numeroDeclaration: e.target.value.toUpperCase() })}
+            style={{ fontFamily: 'monospace' }}
+          />
         </div>
 
         {/* VISITE 1 */}
