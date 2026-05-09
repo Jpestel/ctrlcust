@@ -274,6 +274,8 @@ export default function Step5CompteRendu({ data }) {
     const body = encodeURIComponent(`Bonjour,\n\nVeuillez trouver ci-joint le fichier JSON du contrôle douanier ${crn} effectué le ${date}.\n\nCordialement`)
     window.open(`mailto:?subject=${subject}&body=${body}`)
   }
+
+  async function handleDownloadPhotos() {
     if (data.photos.length === 0) return
     setZipping(true)
     try {
