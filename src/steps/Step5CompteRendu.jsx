@@ -142,7 +142,7 @@ function generateTexte(data) {
     t += `Lieu          : ${lieu1}\n\n`
   }
 
-  t += `Je soussigné(e), ${agent}, contrôleur des douanes affecté(e) au bureau du Havre Port, certifie avoir procédé au contrôle physique des marchandises faisant l'objet de la déclaration ${fluxLabel} n° ${decl}, déposée pour le compte de ${importateurStr} par ${representantStr}.\n\n`
+  t += `Je soussigné(e), ${agent}, contrôleur des douanes affecté(e) au bureau du Havre Port, certifie avoir procédé au contrôle physique des marchandises faisant l'objet de la déclaration ${fluxLabel} n° ${crn}, déposée pour le compte de ${importateurStr} par ${representantStr}.\n\n`
 
   // ── VISITE 1 (terminal ou dépotage seul) ──
   if (nbVisites === 2) {
