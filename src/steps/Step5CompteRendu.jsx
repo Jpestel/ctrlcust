@@ -266,7 +266,44 @@ export default function Step5CompteRendu({ data }) {
   }
 
   const [sending, setSending] = useState(false)
-  const [sendStatus, setSendStatus] = useState(null) // 'ok' | 'error' | null
+  const [sendStatus, setSendStatus] = useState(null)
+  const [sharing, setSharing] = useState(false)
+  const [shareStatus, setShareStatus] = useState(null)
+
+  async function handleShareSMS() {
+    const crn = data.docDeclaration?.data?.crn || data.numeroDeclaration || 'controle'
+    const date = data.dateControle || new Date().toISOString().slice(0, 10)
+    const filename = `controle-${crn}-${date}.json`
+    const jsonData = JSON.stringify(data, null, 2)
+
+    setSharing(true)
+    setShareStatus(null)
+    try {
+      const res = await fetch('/api/share-json', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jsonData, filename }),
+      })
+      const json = await res.json()
+      if (!json.url) throw new Error('URL manquante')
+
+      // Lien qui charge ctrlcust avec le JSON
+      const shareUrl = `${window.location.origin}?import=${encodeURIComponent(json.url)}`
+      const message = `Contrôle douanier ${crn} — ${date}\nOuvrir dans ctrlcust : ${shareUrl}`
+
+      // Détecter iOS vs Android pour le format sms:
+      const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent)
+      const sep = isIOS ? '&' : '?'
+      window.open(`sms:${sep}body=${encodeURIComponent(message)}`)
+
+      setShareStatus('ok')
+    } catch (err) {
+      setShareStatus('error')
+    } finally {
+      setSharing(false)
+      setTimeout(() => setShareStatus(null), 4000)
+    }
+  } // 'ok' | 'error' | null
 
   async function handleSendEmail() {
     const crn = data.docDeclaration?.data?.crn || data.numeroDeclaration || 'controle'
@@ -340,11 +377,16 @@ export default function Step5CompteRendu({ data }) {
         <div style={{ display: 'flex', alignItems: 'center', marginTop: '0.85rem', gap: '0.75rem', flexWrap: 'wrap' }}>
           <button className="btn btn-primary" onClick={handleCopy}>Copier le texte</button>
           <button className="btn btn-secondary" onClick={handleSendEmail} disabled={sending}>
-            {sending ? '⏳ Envoi en cours…' : '📤 Envoyer par mail (JSON)'}
+            {sending ? '⏳ Envoi…' : '📤 Envoyer par mail (JSON)'}
+          </button>
+          <button className="btn btn-secondary" onClick={handleShareSMS} disabled={sharing}>
+            {sharing ? '⏳ Génération du lien…' : '💬 Partager par SMS'}
           </button>
           {copied && <span className="copy-feedback">✓ Copié !</span>}
-          {sendStatus === 'ok' && <span style={{ color: '#166534', fontWeight: 600 }}>✓ Mail envoyé à jerompestel@gmail.com !</span>}
-          {sendStatus === 'error' && <span style={{ color: '#dc2626', fontWeight: 600 }}>✗ Erreur d'envoi — vérifiez la console</span>}
+          {sendStatus === 'ok' && <span style={{ color: '#166534', fontWeight: 600 }}>✓ Mail envoyé !</span>}
+          {sendStatus === 'error' && <span style={{ color: '#dc2626', fontWeight: 600 }}>✗ Erreur mail</span>}
+          {shareStatus === 'ok' && <span style={{ color: '#166534', fontWeight: 600 }}>✓ Lien généré !</span>}
+          {shareStatus === 'error' && <span style={{ color: '#dc2626', fontWeight: 600 }}>✗ Erreur partage</span>}
         </div>
       </div>
 

@@ -121,6 +121,23 @@ export default function App() {
 
   // Chargement initial depuis localStorage
   useEffect(() => {
+    // Priorité au lien de partage SMS (?import=URL)
+    const params = new URLSearchParams(window.location.search)
+    const importUrl = params.get('import')
+    if (importUrl) {
+      fetch(importUrl)
+        .then(r => r.json())
+        .then(imported => {
+          if (imported && typeof imported === 'object') {
+            setData({ ...INITIAL_DATA, ...imported })
+            setStep(5)
+            window.history.replaceState({}, '', window.location.pathname)
+          }
+        })
+        .catch(() => {})
+      return // Ne pas charger le localStorage si on importe
+    }
+
     const saved = localStorage.getItem(STORAGE_KEY)
     if (saved) {
       try {
