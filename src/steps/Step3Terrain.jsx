@@ -190,7 +190,7 @@ function PrelevementCard({ prelev, index, onUpdate, onRemove }) {
   )
 }
 
-function ConteneurControle({ ctrl, conteneur, plombBL, dateControle, onUpdate, isTerminal }) {
+function ConteneurControle({ ctrl, conteneur, plombBL, dateControle, onUpdate, isTerminal, onUpdatePlombBL }) {
   function updateCommis(field, value) {
     onUpdate({ commis: { ...ctrl.commis, [field]: value } })
   }
@@ -306,12 +306,20 @@ function ConteneurControle({ ctrl, conteneur, plombBL, dateControle, onUpdate, i
             <div className="section-title">Vérification du plomb</div>
             <div className="form-row">
               <div className="form-group">
-                <label>Plomb BL (relevé à l'étape précédente)</label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  Plomb BL
+                  {plombBL && (
+                    <span style={{ fontSize: '0.72rem', background: '#dcfce7', color: '#166534', borderRadius: '0.3rem', padding: '0.1rem 0.35rem', fontWeight: 600 }}>
+                      extrait BL — modifiable
+                    </span>
+                  )}
+                </label>
                 <input
                   type="text"
-                  value={plombBL || 'Non renseigné'}
-                  readOnly
-                  style={{ fontFamily: 'monospace', background: '#f5f7fa', color: '#7f8c8d' }}
+                  placeholder="Numéro de plomb du BL"
+                  value={plombBL || ''}
+                  onChange={e => onUpdatePlombBL && onUpdatePlombBL(e.target.value)}
+                  style={{ fontFamily: 'monospace' }}
                 />
               </div>
               <div className="form-group">
@@ -439,7 +447,7 @@ function ConteneurControle({ ctrl, conteneur, plombBL, dateControle, onUpdate, i
   )
 }
 
-function VisitePanel({ conteneurs, controles, plombsBL, dateControle, isTerminal, onUpdateControle }) {
+function VisitePanel({ conteneurs, controles, plombsBL, dateControle, isTerminal, onUpdateControle, onUpdatePlombBL }) {
   const [activeId, setActiveId] = useState(conteneurs[0]?.id ?? null)
   const activeCtrl = controles.find(c => c.conteneurId === activeId)
   const activeConteneur = conteneurs.find(c => c.id === activeId)
@@ -487,6 +495,7 @@ function VisitePanel({ conteneurs, controles, plombsBL, dateControle, isTerminal
           dateControle={dateControle}
           isTerminal={isTerminal}
           onUpdate={updates => onUpdateControle(activeId, updates)}
+          onUpdatePlombBL={val => onUpdatePlombBL(activeId, val)}
         />
       )}
     </>
@@ -510,6 +519,12 @@ export default function Step3Terrain({ data, update, isTerminal }) {
       controlesDepot: data.controlesDepot.map(c =>
         c.conteneurId === conteneurId ? { ...c, ...updates } : c
       )
+    })
+  }
+
+  function updatePlombBL(conteneurId, value) {
+    update({
+      plombsBL: { ...data.plombsBL, [conteneurId]: value.toUpperCase() }
     })
   }
 
@@ -547,6 +562,7 @@ export default function Step3Terrain({ data, update, isTerminal }) {
           dateControle={data.dateControle}
           isTerminal={isTerminal}
           onUpdateControle={updateControle}
+          onUpdatePlombBL={updatePlombBL}
         />
       )}
 
@@ -558,6 +574,7 @@ export default function Step3Terrain({ data, update, isTerminal }) {
           dateControle={data.dateControleDepot}
           isTerminal={false}
           onUpdateControle={updateControleDepot}
+          onUpdatePlombBL={() => {}}
         />
       )}
     </div>
