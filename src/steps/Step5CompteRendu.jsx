@@ -265,25 +265,44 @@ export default function Step5CompteRendu({ data }) {
     })
   }
 
-  function handleGenerateJSON() {
+  const [sending, setSending] = useState(false)
+  const [sendStatus, setSendStatus] = useState(null) // 'ok' | 'error' | null
+
+  async function handleSendEmail() {
     const crn = data.docDeclaration?.data?.crn || data.numeroDeclaration || 'controle'
     const date = data.dateControle || new Date().toISOString().slice(0, 10)
     const filename = `controle-${crn}-${date}.json`
-    const json = JSON.stringify(data, null, 2)
-    const blob = new Blob([json], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
+    const jsonData = JSON.stringify(data, null, 2)
 
-    // Proposer téléchargement
+    // Téléchargement local en parallèle
+    const blob = new Blob([jsonData], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
-    a.href = url
-    a.download = filename
-    a.click()
+    a.href = url; a.download = filename; a.click()
     URL.revokeObjectURL(url)
 
-    // Proposer envoi par mail
-    const subject = encodeURIComponent(`Contrôle douanier — ${crn} — ${date}`)
-    const body = encodeURIComponent(`Bonjour,\n\nVeuillez trouver ci-joint le fichier JSON du contrôle douanier ${crn} effectué le ${date}.\n\nCordialement`)
-    window.open(`mailto:?subject=${subject}&body=${body}`)
+    // Envoi par mail
+    setSending(true)
+    setSendStatus(null)
+    try {
+      const res = await fetch('/api/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: 'jerompestel@gmail.com',
+          subject: `Contrôle douanier — ${crn} — ${date}`,
+          jsonData,
+          filename,
+        }),
+      })
+      const json = await res.json()
+      setSendStatus(json.success ? 'ok' : 'error')
+    } catch {
+      setSendStatus('error')
+    } finally {
+      setSending(false)
+      setTimeout(() => setSendStatus(null), 4000)
+    }
   }
 
   async function handleDownloadPhotos() {
@@ -315,8 +334,12 @@ export default function Step5CompteRendu({ data }) {
         <div className="compte-rendu-box">{texte}</div>
         <div style={{ display: 'flex', alignItems: 'center', marginTop: '0.85rem', gap: '0.75rem', flexWrap: 'wrap' }}>
           <button className="btn btn-primary" onClick={handleCopy}>Copier le texte</button>
-          <button className="btn btn-secondary" onClick={handleGenerateJSON}>📤 Générer JSON &amp; envoyer par mail</button>
-          {copied && <span className="copy-feedback">✓ Copié dans le presse-papier !</span>}
+          <button className="btn btn-secondary" onClick={handleSendEmail} disabled={sending}>
+            {sending ? '⏳ Envoi en cours…' : '📤 Envoyer par mail (JSON)'}
+          </button>
+          {copied && <span className="copy-feedback">✓ Copié !</span>}
+          {sendStatus === 'ok' && <span style={{ color: '#166534', fontWeight: 600 }}>✓ Mail envoyé à jerompestel@gmail.com !</span>}
+          {sendStatus === 'error' && <span style={{ color: '#dc2626', fontWeight: 600 }}>✗ Erreur d'envoi — vérifiez la console</span>}
         </div>
       </div>
 
