@@ -2,7 +2,7 @@ import { useState } from 'react'
 import JSZip from 'jszip'
 import { formatDate } from '../utils'
 
-function genVisiteConteneur(conteneur, ctrl, plombBL, date, isTerminal) {
+function genVisiteConteneur(conteneur, ctrl, plombBL, date, isTerminal, heureFinControle) {
   if (!ctrl) return ''
   let t = ''
 
@@ -104,7 +104,8 @@ function genVisiteConteneur(conteneur, ctrl, plombBL, date, isTerminal) {
   t += `Il n'y a pas d'autres références accessibles aux portes du conteneur.\n\n`
 
   if (isTerminal && ctrl.nouveauPlomb) {
-    t += `Je fais refermer le conteneur et apposer un nouveau plomb commercial n° ${ctrl.nouveauPlomb} reconnu intègre. Fin des opérations de visite à ${ctrl.heureFin || '__h__'}.\n\n`
+    const fin = heureFinControle ? heureFinControle.replace(':', 'h') : '__h__'
+    t += `Je fais refermer le conteneur et apposer un nouveau plomb commercial n° ${ctrl.nouveauPlomb} reconnu intègre. Fin des opérations de visite à ${fin}.\n\n`
   }
 
   return t
@@ -188,7 +189,11 @@ function generateTexte(data) {
 
   let identiteAgents = ''
   if (deuxAgents) {
-    identiteAgents = `${sujet}, ${civ1} ${agent1Nom} et ${civ2} ${agent2Nom}, respectivement ${grade1} et ${grade2} du Havre secteur OCEAN`
+    if (grade1 === grade2) {
+      identiteAgents = `${sujet}, ${civ1} ${agent1Nom} et ${civ2} ${agent2Nom}, tous deux ${grade1} du Havre secteur OCEAN`
+    } else {
+      identiteAgents = `${sujet}, ${civ1} ${agent1Nom} et ${civ2} ${agent2Nom}, respectivement ${grade1} et ${grade2} du Havre secteur OCEAN`
+    }
   } else {
     identiteAgents = `${sujet}, ${civ1} ${agent1Nom}, ${grade1} du Havre secteur OCEAN`
   }
@@ -221,7 +226,7 @@ function generateTexte(data) {
 
   for (const conteneur of conteneurs || []) {
     const ctrl = controles?.find(c => c.conteneurId === conteneur.id)
-    t += genVisiteConteneur(conteneur, ctrl, plombsBL?.[conteneur.id], date1, isTerminal)
+    t += genVisiteConteneur(conteneur, ctrl, plombsBL?.[conteneur.id], date1, isTerminal, heureFinControle)
   }
 
   if (isTerminal && hasVisiteDepot && (controlesDepot || []).length > 0) {
