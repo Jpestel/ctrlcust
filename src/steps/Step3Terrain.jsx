@@ -1,6 +1,84 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { uid } from '../utils'
-import PhrasesRapides, { PhrasesRapidesUnite } from '../components/PhrasesRapides'
+import PhrasesRapides from '../components/PhrasesRapides'
+
+const DEFAULT_PHRASES_MARCHANDISE = [
+  "Cette référence est bien reprise sur la facture jointe à la déclaration.",
+  "Cette référence n'est pas présente sur la facture jointe à la déclaration.",
+  "Cette marchandise ne semble pas avoir été déclarée.",
+  "Les marquages obligatoires sont bien repris sur les emballages.",
+  "Les marquages obligatoires sont absents ou non conformes.",
+  "L'origine indiquée sur l'emballage est conforme à la déclaration.",
+  "Pas de prélèvement d'échantillon.",
+  "Il n'y a pas d'autres références accessibles aux portes du conteneur.",
+]
+
+function PhrasesRapidesUnite({ value, onChange, crn, articleNum }) {
+  const key = 'ctrlcust-phrases-marchandise'
+  const [phrases, setPhrases] = useState(() => {
+    try { const s = localStorage.getItem(key); return s ? JSON.parse(s) : DEFAULT_PHRASES_MARCHANDISE } catch { return DEFAULT_PHRASES_MARCHANDISE }
+  })
+  const [open, setOpen] = useState(false)
+  const [checked, setChecked] = useState([])
+  const [newPhrase, setNewPhrase] = useState('')
+
+  useEffect(() => { localStorage.setItem(key, JSON.stringify(phrases)) }, [phrases])
+
+  function resolve(p) {
+    return p.replace(/\{CRN\}/g, crn || '').replace(/\{ARTICLE\}/g, articleNum || '')
+  }
+  function toggle(i) { setChecked(prev => prev.includes(i) ? prev.filter(x => x !== i) : [...prev, i]) }
+  function insert() {
+    const sel = checked.map(i => resolve(phrases[i])).join(' ')
+    if (!sel) return
+    const sep = !value.trim() ? '' : ' '
+    onChange(value + sep + sel)
+    setChecked([]); setOpen(false)
+  }
+  function addNew() {
+    const t = newPhrase.trim(); if (!t || phrases.includes(t)) return
+    setPhrases(p => [...p, t]); setNewPhrase('')
+  }
+  function save() {
+    const t = value.trim(); if (!t || phrases.includes(t)) return
+    setPhrases(p => [...p, t])
+  }
+
+  return (
+    <div className="phrases-rapides">
+      <button type="button" className="phrases-toggle" onClick={() => setOpen(o => !o)}>
+        Phrases rapides {open ? '▲' : '▼'}
+      </button>
+      {open && (
+        <div className="phrases-panel">
+          <ul className="phrases-list">
+            {phrases.map((phrase, i) => (
+              <li key={i} className="phrase-item" style={{ gap: '0.5rem' }}>
+                <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', flex: 1, cursor: 'pointer' }}>
+                  <input type="checkbox" checked={checked.includes(i)} onChange={() => toggle(i)} style={{ marginTop: '0.2rem', flexShrink: 0 }} />
+                  <span className="phrase-text" style={{ fontSize: '0.82rem' }}>{resolve(phrase)}</span>
+                </label>
+                <button type="button" className="btn btn-sm btn-ghost" onClick={() => setPhrases(p => p.filter((_, idx) => idx !== i))}>✕</button>
+              </li>
+            ))}
+          </ul>
+          {checked.length > 0 && (
+            <button type="button" className="btn btn-sm btn-primary" style={{ margin: '0.5rem 0.75rem' }} onClick={insert}>
+              ✓ Insérer {checked.length} phrase{checked.length > 1 ? 's' : ''}
+            </button>
+          )}
+          <div className="phrases-footer">
+            <button type="button" className="btn btn-sm btn-secondary" onClick={save} disabled={!value.trim()}>+ Sauvegarder le texte actuel</button>
+            <div className="phrases-new-row">
+              <input type="text" placeholder="Nouvelle phrase..." value={newPhrase} onChange={e => setNewPhrase(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') addNew() }} />
+              <button type="button" className="btn btn-sm btn-success" onClick={addNew}>+ Ajouter</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
 
 const TYPES_CONDITIONNEMENT = [
   { value: 'carton', label: 'Carton' },
