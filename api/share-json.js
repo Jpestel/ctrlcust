@@ -20,6 +20,7 @@ module.exports = async function handler(req, res) {
     const blob = await put(filename || 'controle.json', jsonData, {
       access: 'public',
       contentType: 'application/json',
+      addRandomSuffix: true,
     })
 
     return res.status(200).json({ url: blob.url })
