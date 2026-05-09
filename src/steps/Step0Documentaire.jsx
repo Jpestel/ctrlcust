@@ -241,8 +241,8 @@ export default function Step0Documentaire({ data, update, goNext }) {
     }
 
     // Pré-remplir le MRN dans l'étape 1 si non encore saisi
-    if (decDoc?.data?.mrn && !data.numeroDeclaration) {
-      updates.numeroDeclaration = decDoc.data.mrn
+    if (!data.numeroDeclaration) {
+      updates.numeroDeclaration = decDoc?.data?.crn || decDoc?.data?.mrn || ''
     }
 
     update(updates)

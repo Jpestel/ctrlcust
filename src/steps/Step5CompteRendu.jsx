@@ -9,13 +9,11 @@ function genVisiteConteneur(conteneur, ctrl, plombBL, date, isTerminal) {
   const plombBLStr = (plombBL || '').trim().toUpperCase() || 'Non renseigné'
   const plombReel = (ctrl.plombReel || '').trim().toUpperCase() || 'Non renseigné'
   const commisNom = `${ctrl.commis.prenom} ${ctrl.commis.nom}`.trim() || '[Nom non renseigné]'
-  const qualite = ctrl.commis.qualite === 'commis' ? 'commis en douane' : 'coursier'
+  const qualite = ctrl.commis.qualite === 'commis' ? 'commis' : 'coursier'
 
   t += `${'─'.repeat(52)}\n`
   t += `CONTENEUR N° ${conteneur.numero}\n`
   t += `${'─'.repeat(52)}\n\n`
-
-  t += `La visite s'est déroulée en présence de ${commisNom}, ${qualite}.\n\n`
 
   if (isTerminal) {
     t += `VÉRIFICATION DU PLOMB :\n`
@@ -29,7 +27,7 @@ function genVisiteConteneur(conteneur, ctrl, plombBL, date, isTerminal) {
     } else {
       t += `\n`
     }
-    t += `Après rupture du plomb par ${commisNom} et ouverture des portes du conteneur, un temps d'aération suffisant a été respecté avant d'approcher les marchandises.\n\n`
+    t += `Je fais rompre le scellé commercial n° ${plombBLStr} par ${commisNom}, ouvrir le conteneur et aérer celui-ci.\n\n`
   }
 
   if (ctrl.descriptionChargement) {
@@ -47,8 +45,8 @@ function genVisiteConteneur(conteneur, ctrl, plombBL, date, isTerminal) {
         caisse:  { label: 'Caisse / Colis bois', article: 'la',  labelMin: 'caisse',  feminin: true  },
         vrac:    { label: 'Vrac',                article: null,  labelMin: 'vrac',    feminin: false },
         article: { label: 'Article',             article: "l'",  labelMin: 'article', feminin: false, isArticle: true },
-        unite:   { label: 'Unité isolée',        article: "l'",  labelMin: 'unité',   feminin: true  },
-        autre:   { label: 'Unité',               article: "l'",  labelMin: 'unité',   feminin: true  },
+        unite:   { label: 'Unité isolée',        article: "l'",  labelMin: 'unité',   feminin: true,  isArticle: true },
+        autre:   { label: 'Unité',               article: "l'",  labelMin: 'unité',   feminin: true,  isArticle: true },
       }
       const cfg = typesConfig[type] || typesConfig.autre
       const isVrac = type === 'vrac'
@@ -61,39 +59,50 @@ function genVisiteConteneur(conteneur, ctrl, plombBL, date, isTerminal) {
       } else if (isArticle) {
         t += `${cfg.label} n°${i + 1}${unite.reference ? ` — Référence : ${unite.reference}` : ''}\n`
         if (unite.descriptionMentions) t += `${unite.descriptionMentions}\n`
-        t += `Après examen visuel, ${cfg.article}${cfg.labelMin} a été identifié et reconnu conforme à la déclaration. Mention apposée : "Visite douane — ${date} — Vu et identifié".\n\n`
+        t += `Je demande au ${qualite} de remettre ${cfg.article}${cfg.labelMin} dans le conteneur.\n\n`
       } else {
         t += `${cfg.label} n°${i + 1}${unite.reference ? ` — Référence : ${unite.reference}` : ''}\n`
         if (unite.descriptionMentions) t += `${unite.descriptionMentions}\n`
         if (unite.mentionFermeture === 'complet') {
-          t += `Après ouverture et vérification du contenu, ${cfg.article} ${cfg.labelMin} a été refermé${cfg.feminin ? 'e' : ''}. Mention apposée : "Visite douane — ${date} — Complet".\n\n`
+          t += `Je fais refermer ${cfg.article} ${cfg.labelMin} et apposer dessus les mentions "Visite douane" et la date ${date}.\n\n`
         } else {
           const detail = unite.detailPrelevementExamen ? ` (${unite.detailPrelevementExamen})` : ''
-          t += `Après ouverture et vérification, un prélèvement pour examen a été effectué${detail}. ${cfg.article.charAt(0).toUpperCase() + cfg.article.slice(1)} ${cfg.labelMin} a été refermé${cfg.feminin ? 'e' : ''} avec mention du prélèvement. Les articles prélevés seront restitués au RDE après examen.\n\n`
+          t += `Un prélèvement pour examen a été effectué${detail}. Je fais refermer ${cfg.article} ${cfg.labelMin} avec mention du prélèvement. Les articles prélevés seront restitués au RDE après examen.\n\n`
         }
       }
     })
   }
 
+  // Prélèvements labo
   if (ctrl.hasPrelevementsLabo && ctrl.prelevementsLabo.length > 0) {
     t += `PRÉLÈVEMENTS POUR ANALYSE LABORATOIRE :\n\n`
     ctrl.prelevementsLabo.forEach((p, i) => {
       const destMap = { emporte: "emporté par l'agent", entrepot: 'laissé en entrepôt' }
+      const modePrelev = p.modePrelev || 'sachets'
       t += `Prélèvement n°${i + 1} :\n`
       t += `  Référence       : ${p.reference || 'Non renseignée'}\n`
       t += `  Quantité        : ${p.quantite || 'Non renseignée'}\n`
+      t += `  Mode            : ${modePrelev === 'sachets' ? 'Sachets à sceller' : 'Pince à sceller et ficelle résistante'}\n`
       t += `  Scellé douanier : ${p.numeroScelle || 'Non renseigné'}\n`
-      t += `  Sachets :\n`
-      t += `    • Sachet n°1 (douane) : ${destMap[p.sachet1]}\n`
-      t += `    • Sachet n°2 (douane) : ${destMap[p.sachet2]}\n`
-      t += `    • Sachet n°3 (douane) : ${destMap[p.sachet3]}\n`
-      t += `    • Sachet n°4 (RDE)    : remis à ${commisNom} pour le compte du déclarant en douane\n\n`
+      if (modePrelev === 'sachets') {
+        t += `  Sachets :\n`
+        t += `    • Sachet n°1 (douane) : ${destMap[p.sachet1]}\n`
+        t += `    • Sachet n°2 (douane) : ${destMap[p.sachet2]}\n`
+        t += `    • Sachet n°3 (douane) : ${destMap[p.sachet3]}\n`
+        t += `    • Sachet n°4 (RDE)    : remis à ${commisNom} pour le compte du déclarant en douane\n\n`
+      } else {
+        t += `  Le prélèvement a été effectué à l'aide d'une pince à sceller et de ficelle résistante, scellé n° ${p.numeroScelle || 'Non renseigné'}.\n\n`
+      }
     })
+  } else {
+    t += `Pas de prélèvement d'échantillon.\n\n`
   }
 
+  // Il n'y a pas d'autres références accessibles
+  t += `Il n'y a pas d'autres références accessibles aux portes du conteneur.\n\n`
+
   if (isTerminal && ctrl.nouveauPlomb) {
-    t += `FERMETURE DU CONTENEUR :\n`
-    t += `Un nouveau plomb a été apposé par ${commisNom}. Numéro du nouveau scellé : ${ctrl.nouveauPlomb}.\n\n`
+    t += `Je fais refermer le conteneur et apposer un nouveau plomb commercial n° ${ctrl.nouveauPlomb} reconnu intègre. Fin des opérations de visite à ${ctrl.heureFin || '__h__'}.\n\n`
   }
 
   return t
@@ -245,7 +254,26 @@ export default function Step5CompteRendu({ data }) {
     })
   }
 
-  async function handleDownloadPhotos() {
+  function handleGenerateJSON() {
+    const crn = data.docDeclaration?.data?.crn || data.numeroDeclaration || 'controle'
+    const date = data.dateControle || new Date().toISOString().slice(0, 10)
+    const filename = `controle-${crn}-${date}.json`
+    const json = JSON.stringify(data, null, 2)
+    const blob = new Blob([json], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+
+    // Proposer téléchargement
+    const a = document.createElement('a')
+    a.href = url
+    a.download = filename
+    a.click()
+    URL.revokeObjectURL(url)
+
+    // Proposer envoi par mail
+    const subject = encodeURIComponent(`Contrôle douanier — ${crn} — ${date}`)
+    const body = encodeURIComponent(`Bonjour,\n\nVeuillez trouver ci-joint le fichier JSON du contrôle douanier ${crn} effectué le ${date}.\n\nCordialement`)
+    window.open(`mailto:?subject=${subject}&body=${body}`)
+  }
     if (data.photos.length === 0) return
     setZipping(true)
     try {
@@ -274,6 +302,7 @@ export default function Step5CompteRendu({ data }) {
         <div className="compte-rendu-box">{texte}</div>
         <div style={{ display: 'flex', alignItems: 'center', marginTop: '0.85rem', gap: '0.75rem', flexWrap: 'wrap' }}>
           <button className="btn btn-primary" onClick={handleCopy}>Copier le texte</button>
+          <button className="btn btn-secondary" onClick={handleGenerateJSON}>📤 Générer JSON &amp; envoyer par mail</button>
           {copied && <span className="copy-feedback">✓ Copié dans le presse-papier !</span>}
         </div>
       </div>

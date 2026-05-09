@@ -12,6 +12,7 @@ const GRADES = [
   { value: 'agent_constatation', label: 'Agent de constatation' },
   { value: 'controleur_2', label: 'Contrôleur de 2ème classe' },
   { value: 'controleur_1', label: 'Contrôleur de 1ère classe' },
+  { value: 'controleur_principal', label: 'Contrôleur principal' },
   { value: 'inspecteur', label: 'Inspecteur' },
   { value: 'inspecteur_principal', label: 'Inspecteur principal' },
   { value: 'libre', label: 'Autre (saisie libre)' },

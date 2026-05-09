@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { uid } from '../utils'
-import PhrasesRapides from '../components/PhrasesRapides'
+import PhrasesRapides, { PhrasesRapidesUnite } from '../components/PhrasesRapides'
 
 const TYPES_CONDITIONNEMENT = [
   { value: 'carton', label: 'Carton' },
@@ -13,7 +13,7 @@ const TYPES_CONDITIONNEMENT = [
   { value: 'autre', label: 'Autre' },
 ]
 
-function UniteCard({ unite, index, onUpdate, onRemove, dateControle }) {
+function UniteCard({ unite, index, onUpdate, onRemove, dateControle, crn, articleNum }) {
   const dateStr = dateControle
     ? new Date(dateControle).toLocaleDateString('fr-FR')
     : '__/__/____'
@@ -59,6 +59,12 @@ function UniteCard({ unite, index, onUpdate, onRemove, dateControle }) {
               ? 'Description / identification de l\'article'
               : `Description des mentions sur le ${typeLabel.toLowerCase()}`}
         </label>
+        <PhrasesRapidesUnite
+          value={unite.descriptionMentions}
+          onChange={v => onUpdate({ descriptionMentions: v })}
+          crn={crn}
+          articleNum={articleNum}
+        />
         <textarea
           placeholder={isVrac
             ? "Décrivez la nature, le volume, l'état apparent de la marchandise en vrac..."
@@ -143,6 +149,24 @@ function PrelevementCard({ prelev, index, onUpdate, onRemove }) {
       </div>
 
       <div className="form-group">
+        <label>Mode de prélèvement</label>
+        <div className="radio-group">
+          <label className="radio-option">
+            <input type="radio" name={`mode-${prelev.id}`} value="sachets"
+              checked={(prelev.modePrelev || 'sachets') === 'sachets'}
+              onChange={() => onUpdate({ modePrelev: 'sachets' })} />
+            Sachets à sceller
+          </label>
+          <label className="radio-option">
+            <input type="radio" name={`mode-${prelev.id}`} value="pince"
+              checked={prelev.modePrelev === 'pince'}
+              onChange={() => onUpdate({ modePrelev: 'pince' })} />
+            Pince à sceller et ficelle résistante
+          </label>
+        </div>
+      </div>
+
+      <div className="form-group">
         <label>N° de scellé douanier</label>
         <input
           type="text"
@@ -196,7 +220,7 @@ function PrelevementCard({ prelev, index, onUpdate, onRemove }) {
   )
 }
 
-function ConteneurControle({ ctrl, conteneur, plombBL, dateControle, onUpdate, isTerminal, onUpdatePlombBL }) {
+function ConteneurControle({ ctrl, conteneur, plombBL, dateControle, onUpdate, isTerminal, onUpdatePlombBL, crn }) {
   function updateCommis(field, value) {
     onUpdate({ commis: { ...ctrl.commis, [field]: value } })
   }
@@ -385,6 +409,8 @@ function ConteneurControle({ ctrl, conteneur, plombBL, dateControle, onUpdate, i
             unite={unite}
             index={i}
             dateControle={dateControle}
+            crn={crn}
+            articleNum={i + 1}
             onUpdate={updates => updateUnite(unite.id, updates)}
             onRemove={() => removeUnite(unite.id)}
           />
@@ -453,7 +479,7 @@ function ConteneurControle({ ctrl, conteneur, plombBL, dateControle, onUpdate, i
   )
 }
 
-function VisitePanel({ conteneurs, controles, plombsBL, dateControle, isTerminal, onUpdateControle, onUpdatePlombBL }) {
+function VisitePanel({ conteneurs, controles, plombsBL, dateControle, isTerminal, onUpdateControle, onUpdatePlombBL, crn }) {
   const [activeId, setActiveId] = useState(conteneurs[0]?.id ?? null)
   const activeCtrl = controles.find(c => c.conteneurId === activeId)
   const activeConteneur = conteneurs.find(c => c.id === activeId)
@@ -500,6 +526,7 @@ function VisitePanel({ conteneurs, controles, plombsBL, dateControle, isTerminal
           plombBL={plombsBL?.[activeId]}
           dateControle={dateControle}
           isTerminal={isTerminal}
+          crn={crn}
           onUpdate={updates => onUpdateControle(activeId, updates)}
           onUpdatePlombBL={val => onUpdatePlombBL(activeId, val)}
         />
@@ -567,6 +594,7 @@ export default function Step3Terrain({ data, update, isTerminal }) {
           plombsBL={data.plombsBL}
           dateControle={data.dateControle}
           isTerminal={isTerminal}
+          crn={data.docDeclaration?.data?.crn || data.numeroDeclaration || ''}
           onUpdateControle={updateControle}
           onUpdatePlombBL={updatePlombBL}
         />
@@ -579,6 +607,7 @@ export default function Step3Terrain({ data, update, isTerminal }) {
           plombsBL={{}}
           dateControle={data.dateControleDepot}
           isTerminal={false}
+          crn={data.docDeclaration?.data?.crn || data.numeroDeclaration || ''}
           onUpdateControle={updateControleDepot}
           onUpdatePlombBL={() => {}}
         />
