@@ -128,6 +128,13 @@ export function extractSealNumbers(text) {
   return Object.values(extractSealMap(text))
 }
 
+// ── Extraction Bill of Lading ─────────────────────────────────────────────────
+export function extractBLData(text) {
+  const containers = extractContainerNumbers(text)
+  const sealMap = extractSealMap(text)
+  return { containers, sealMap }
+}
+
 // ── Données financières ──────────────────────────────────────────────────────
 
 function parseNum(str) {

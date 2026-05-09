@@ -49,6 +49,7 @@ const INITIAL_DATA = {
   photos: [],
   // Étape 0 — contrôle documentaire
   docDeclaration: null,
+  docBL: null,
   extractedConteneurs: [],
   saisieStep0: null,
   importateur: '',
