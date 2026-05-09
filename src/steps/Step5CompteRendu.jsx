@@ -274,14 +274,19 @@ export default function Step5CompteRendu({ data }) {
     const filename = `controle-${crn}-${date}.json`
     const jsonData = JSON.stringify(data, null, 2)
 
-    // Téléchargement local en parallèle
+    // Téléchargement local — sur mobile iOS on ouvre dans un nouvel onglet
     const blob = new Blob([jsonData], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url; a.download = filename; a.click()
-    URL.revokeObjectURL(url)
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+    if (isMobile) {
+      window.open(url, '_blank')
+    } else {
+      const a = document.createElement('a')
+      a.href = url; a.download = filename; a.click()
+      URL.revokeObjectURL(url)
+    }
 
-    // Envoi par mail
+    // Envoi par mail via Resend
     setSending(true)
     setSendStatus(null)
     try {
