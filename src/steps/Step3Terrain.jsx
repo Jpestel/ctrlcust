@@ -51,14 +51,12 @@ function PhrasesRapidesUnite({ value, onChange, crn, articleNum }) {
       </button>
       {open && (
         <div className="phrases-panel">
-          <ul className="phrases-list">
+          <ul className="phrases-list" style={{ listStyle: 'none', margin: 0, padding: '0.5rem 0' }}>
             {phrases.map((phrase, i) => (
-              <li key={i} className="phrase-item" style={{ gap: '0.5rem' }}>
-                <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', flex: 1, cursor: 'pointer' }}>
-                  <input type="checkbox" checked={checked.includes(i)} onChange={() => toggle(i)} style={{ marginTop: '0.2rem', flexShrink: 0 }} />
-                  <span className="phrase-text" style={{ fontSize: '0.82rem' }}>{resolve(phrase)}</span>
-                </label>
-                <button type="button" className="btn btn-sm btn-ghost" onClick={() => setPhrases(p => p.filter((_, idx) => idx !== i))}>✕</button>
+              <li key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', padding: '0.4rem 0.75rem', borderBottom: '1px solid var(--color-border)' }}>
+                <input type="checkbox" checked={checked.includes(i)} onChange={() => toggle(i)} style={{ marginTop: '0.25rem', flexShrink: 0, cursor: 'pointer' }} />
+                <span style={{ fontSize: '0.82rem', flex: 1, lineHeight: 1.45, cursor: 'pointer' }} onClick={() => toggle(i)}>{resolve(phrase)}</span>
+                <button type="button" style={{ background: 'none', border: 'none', color: 'var(--color-text-muted)', cursor: 'pointer', padding: '0 0.25rem', flexShrink: 0 }} onClick={() => setPhrases(p => p.filter((_, idx) => idx !== i))}>✕</button>
               </li>
             ))}
           </ul>
