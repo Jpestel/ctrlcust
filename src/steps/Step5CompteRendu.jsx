@@ -184,7 +184,7 @@ function generateTexte(data) {
   const agent2Nom = nomAgent2 || ''
   const grade2 = resolveGrade(gradeAgent2, gradeAgent2Libre)
 
-  const sujet = deuxAgents ? 'Nous' : 'Je'
+  const sujet = deuxAgents ? 'Nous' : 'Moi'
   const moi = deuxAgents ? 'nous' : 'me'
   const rendons = deuxAgents ? 'rendons' : 'rends'
   const porteur = deuxAgents ? "porteurs de nos commissions d'emploi" : "porteur de ma commission d'emploi"
@@ -225,7 +225,7 @@ function generateTexte(data) {
   t += `DESCRIPTION ET INSPECTION DES MARCHANDISES\n`
   t += `${'─'.repeat(52)}\n\n`
 
-  t += `Le ${date1} à ${heure1}, ${identiteAgents}, ${moi} ${rendons} en fonction de visite, ${porteur}, en tenue civile ${revetu} de la chasuble sérigraphiée "Douane" et ${munis}, sur le lieu de contrôle situé à ${lieu1Court || lieu1} afin de procéder au contrôle des marchandises dédouanées sur la déclaration ${fluxLabel} n° ${crn}.\n\n`
+  t += `Le ${date1} à ${heure1}, ${identiteAgents}, ${deuxAgents ? 'nous rendons' : 'me rends'} en fonction de visite, ${porteur}, en tenue civile ${revetu} de la chasuble sérigraphiée "Douane" et ${munis}, sur le lieu de contrôle situé à ${lieu1Court || lieu1} afin de procéder au contrôle des marchandises dédouanées sur la déclaration ${fluxLabel} n° ${crn}.\n\n`
   t += `Les opérations de visite se déroulent en présence constante et effective de ${nomCommis || '[Commis/Coursier]'}.\n\n`
 
   for (const conteneur of conteneurs || []) {
