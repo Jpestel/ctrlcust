@@ -590,18 +590,20 @@ hr.divider { border: none; border-top: 1.5px solid var(--border); margin: 1.5rem
 
 /* Phrases avec checkbox — checkbox à gauche, texte au milieu, ✕ à droite */
 .phrase-item-check {
-  display: flex;
+  display: flex !important;
   flex-direction: row !important;
-  align-items: flex-start;
-  gap: 0.5rem;
-  padding: 0.5rem 0.75rem;
+  justify-content: flex-start !important;
+  align-items: flex-start !important;
+  gap: 0.5rem !important;
+  padding: 0.5rem 0.75rem !important;
   border-bottom: 1px solid var(--border);
-  cursor: pointer;
+  width: 100%;
+  box-sizing: border-box;
 }
 .phrase-item-check:hover { background: var(--primary-faint); }
-.phrase-item-check input[type="checkbox"] { margin-top: 0.2rem; flex-shrink: 0; }
-.phrase-item-check .phrase-check-text { flex: 1; font-size: 0.82rem; line-height: 1.45; }
-.phrase-item-check .phrase-check-del { flex-shrink: 0; background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 0 0.25rem; }
+.phrase-item-check input[type="checkbox"] { margin-top: 0.2rem; flex-shrink: 0; width: 16px; height: 16px; cursor: pointer; }
+.phrase-check-text { flex: 1; font-size: 0.82rem; line-height: 1.45; cursor: pointer; word-break: break-word; min-width: 0; }
+.phrase-check-del { flex-shrink: 0; background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 0 0.25rem; }
 
 .phrase-text {
   font-size: 0.85rem;
