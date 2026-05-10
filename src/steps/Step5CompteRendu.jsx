@@ -2,7 +2,7 @@ import { useState } from 'react'
 import JSZip from 'jszip'
 import { formatDate } from '../utils'
 
-function genVisiteConteneur(conteneur, ctrl, plombBL, date, isTerminal, heureFinControle, deuxAgents) {
+function genVisiteConteneur(conteneur, ctrl, plombBL, date, isTerminal, heureFinControle, deuxAgents, lieu) {
   if (!ctrl) return ''
   let t = ''
 
@@ -87,7 +87,7 @@ function genVisiteConteneur(conteneur, ctrl, plombBL, date, isTerminal, heureFin
     ctrl.prelevementsLabo.forEach((p, i) => {
       const destMap = {
         emporte: "emporté par l'agent",
-        entrepot: isTerminal ? `laissé à ${lieu1Court || 'TDF'}` : `laissé à l'entrepôt`,
+        entrepot: lieu ? `laissé à ${lieu}` : "laissé en entrepôt",
       }
       const modePrelev = p.modePrelev || 'sachets'
       t += `Prélèvement n°${i + 1} :\n`
@@ -232,7 +232,7 @@ function generateTexte(data) {
 
   for (const conteneur of conteneurs || []) {
     const ctrl = controles?.find(c => c.conteneurId === conteneur.id)
-    t += genVisiteConteneur(conteneur, ctrl, plombsBL?.[conteneur.id], date1, isTerminal, heureFinControle, deuxAgents)
+    t += genVisiteConteneur(conteneur, ctrl, plombsBL?.[conteneur.id], date1, isTerminal, heureFinControle, deuxAgents, lieu1Court)
   }
 
   if (isTerminal && hasVisiteDepot && (controlesDepot || []).length > 0) {
@@ -242,7 +242,7 @@ function generateTexte(data) {
     t += `Suite au contrôle au terminal ${lieu1Court} du ${date1}, la marchandise a fait l'objet d'un dépotage en magasin. Une seconde visite physique a été effectuée.\n\n`
     for (const conteneur of conteneurs || []) {
       const ctrl = (controlesDepot || []).find(c => c.conteneurId === conteneur.id)
-      t += genVisiteConteneur(conteneur, ctrl, null, date2, false, null, deuxAgents)
+      t += genVisiteConteneur(conteneur, ctrl, null, date2, false, null, deuxAgents, lieuControleDepot || 'entrepôt')
     }
   }
 
