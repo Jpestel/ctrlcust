@@ -231,7 +231,14 @@ function UniteCard({ unite, index, onUpdate, onRemove, dateControle, crn, articl
   )
 }
 
-function PrelevementCard({ prelev, index, onUpdate, onRemove }) {
+function PrelevementCard({ prelev, index, onUpdate, onRemove, lieu }) {
+  const isSachets = (prelev.modePrelev || 'sachets') === 'sachets'
+
+  // Label du lieu pour les options de destination
+  const lieuLabel = lieu === 'TDF' ? 'Laissé à TDF'
+    : lieu ? `Laissé à ${lieu}`
+    : 'Laissé en entrepôt'
+
   return (
     <div className="prelev-card">
       <div className="prelev-header">
@@ -265,7 +272,7 @@ function PrelevementCard({ prelev, index, onUpdate, onRemove }) {
         <div className="radio-group">
           <label className="radio-option">
             <input type="radio" name={`mode-${prelev.id}`} value="sachets"
-              checked={(prelev.modePrelev || 'sachets') === 'sachets'}
+              checked={isSachets}
               onChange={() => onUpdate({ modePrelev: 'sachets' })} />
             Sachets à sceller
           </label>
@@ -278,61 +285,66 @@ function PrelevementCard({ prelev, index, onUpdate, onRemove }) {
         </div>
       </div>
 
-      <div className="form-group">
-        <label>N° de scellé douanier</label>
-        <input
-          type="text"
-          placeholder="Numéro du scellé apposé"
-          value={prelev.numeroScelle}
-          onChange={e => onUpdate({ numeroScelle: e.target.value.toUpperCase() })}
-          style={{ fontFamily: 'monospace' }}
-        />
-      </div>
-
-      <div className="form-group">
-        <label>Destination des sachets</label>
-        <div className="sachets-grid">
-          <div className="sachet-row">
-            <span className="sachet-label">Sachet 1 (douane)</span>
-            <select
-              value={prelev.sachet1}
-              onChange={e => onUpdate({ sachet1: e.target.value })}
-            >
-              <option value="emporte">Emporté par l'agent</option>
-              <option value="entrepot">Laissé en entrepôt</option>
-            </select>
-          </div>
-          <div className="sachet-row">
-            <span className="sachet-label">Sachet 2 (douane)</span>
-            <select
-              value={prelev.sachet2}
-              onChange={e => onUpdate({ sachet2: e.target.value })}
-            >
-              <option value="entrepot">Laissé en entrepôt</option>
-              <option value="emporte">Emporté par l'agent</option>
-            </select>
-          </div>
-          <div className="sachet-row">
-            <span className="sachet-label">Sachet 3 (douane)</span>
-            <select
-              value={prelev.sachet3}
-              onChange={e => onUpdate({ sachet3: e.target.value })}
-            >
-              <option value="entrepot">Laissé en entrepôt</option>
-              <option value="emporte">Emporté par l'agent</option>
-            </select>
-          </div>
-          <div className="sachet-row">
-            <span className="sachet-label">Sachet 4 (RDE)</span>
-            <span className="sachet-fixed">Remis au commis/coursier pour le RDE</span>
+      {isSachets ? (
+        <div className="form-group">
+          <label>Sachets — numéro de scellé et destination</label>
+          <div className="sachets-grid">
+            <div className="sachet-row">
+              <span className="sachet-label">Sachet 1 (douane)</span>
+              <input type="text" placeholder="N° scellé" value={prelev.scelleS1 || ''}
+                onChange={e => onUpdate({ scelleS1: e.target.value.toUpperCase() })}
+                style={{ fontFamily: 'monospace', width: '130px' }} />
+              <select value={prelev.sachet1} onChange={e => onUpdate({ sachet1: e.target.value })}>
+                <option value="emporte">Emporté par l'agent</option>
+                <option value="entrepot">{lieuLabel}</option>
+              </select>
+            </div>
+            <div className="sachet-row">
+              <span className="sachet-label">Sachet 2 (douane)</span>
+              <input type="text" placeholder="N° scellé" value={prelev.scelleS2 || ''}
+                onChange={e => onUpdate({ scelleS2: e.target.value.toUpperCase() })}
+                style={{ fontFamily: 'monospace', width: '130px' }} />
+              <select value={prelev.sachet2} onChange={e => onUpdate({ sachet2: e.target.value })}>
+                <option value="entrepot">{lieuLabel}</option>
+                <option value="emporte">Emporté par l'agent</option>
+              </select>
+            </div>
+            <div className="sachet-row">
+              <span className="sachet-label">Sachet 3 (douane)</span>
+              <input type="text" placeholder="N° scellé" value={prelev.scelleS3 || ''}
+                onChange={e => onUpdate({ scelleS3: e.target.value.toUpperCase() })}
+                style={{ fontFamily: 'monospace', width: '130px' }} />
+              <select value={prelev.sachet3} onChange={e => onUpdate({ sachet3: e.target.value })}>
+                <option value="entrepot">{lieuLabel}</option>
+                <option value="emporte">Emporté par l'agent</option>
+              </select>
+            </div>
+            <div className="sachet-row">
+              <span className="sachet-label">Sachet 4 (RDE)</span>
+              <input type="text" placeholder="N° scellé" value={prelev.scelleS4 || ''}
+                onChange={e => onUpdate({ scelleS4: e.target.value.toUpperCase() })}
+                style={{ fontFamily: 'monospace', width: '130px' }} />
+              <span className="sachet-fixed">Remis au commis/coursier pour le RDE</span>
+            </div>
           </div>
         </div>
-      </div>
+      ) : (
+        <div className="form-group">
+          <label>N° de scellé de la pince</label>
+          <input
+            type="text"
+            placeholder="Numéro du scellé de la pince"
+            value={prelev.numeroScelle || ''}
+            onChange={e => onUpdate({ numeroScelle: e.target.value.toUpperCase() })}
+            style={{ fontFamily: 'monospace' }}
+          />
+        </div>
+      )}
     </div>
   )
 }
 
-function ConteneurControle({ ctrl, conteneur, plombBL, dateControle, onUpdate, isTerminal, onUpdatePlombBL, crn }) {
+function ConteneurControle({ ctrl, conteneur, plombBL, dateControle, onUpdate, isTerminal, onUpdatePlombBL, crn, lieu }) {
   function updateCommis(field, value) {
     onUpdate({ commis: { ...ctrl.commis, [field]: value } })
   }
@@ -559,6 +571,7 @@ function ConteneurControle({ ctrl, conteneur, plombBL, dateControle, onUpdate, i
                 key={p.id}
                 prelev={p}
                 index={i}
+                lieu={lieu}
                 onUpdate={updates => updatePrelev(p.id, updates)}
                 onRemove={() => removePrelev(p.id)}
               />
@@ -591,7 +604,7 @@ function ConteneurControle({ ctrl, conteneur, plombBL, dateControle, onUpdate, i
   )
 }
 
-function VisitePanel({ conteneurs, controles, plombsBL, dateControle, isTerminal, onUpdateControle, onUpdatePlombBL, crn }) {
+function VisitePanel({ conteneurs, controles, plombsBL, dateControle, isTerminal, onUpdateControle, onUpdatePlombBL, crn, lieu }) {
   const [activeId, setActiveId] = useState(conteneurs[0]?.id ?? null)
   const activeCtrl = controles.find(c => c.conteneurId === activeId)
   const activeConteneur = conteneurs.find(c => c.id === activeId)
@@ -639,6 +652,7 @@ function VisitePanel({ conteneurs, controles, plombsBL, dateControle, isTerminal
           dateControle={dateControle}
           isTerminal={isTerminal}
           crn={crn}
+          lieu={lieu}
           onUpdate={updates => onUpdateControle(activeId, updates)}
           onUpdatePlombBL={val => onUpdatePlombBL(activeId, val)}
         />
@@ -707,6 +721,7 @@ export default function Step3Terrain({ data, update, isTerminal }) {
           dateControle={data.dateControle}
           isTerminal={isTerminal}
           crn={data.docDeclaration?.data?.crn || data.numeroDeclaration || ''}
+          lieu={data.lieuControle}
           onUpdateControle={updateControle}
           onUpdatePlombBL={updatePlombBL}
         />
@@ -720,6 +735,7 @@ export default function Step3Terrain({ data, update, isTerminal }) {
           dateControle={data.dateControleDepot}
           isTerminal={false}
           crn={data.docDeclaration?.data?.crn || data.numeroDeclaration || ''}
+          lieu={data.lieuControleDepot || 'entrepôt'}
           onUpdateControle={updateControleDepot}
           onUpdatePlombBL={() => {}}
         />

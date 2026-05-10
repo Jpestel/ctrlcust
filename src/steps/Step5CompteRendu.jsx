@@ -85,21 +85,24 @@ function genVisiteConteneur(conteneur, ctrl, plombBL, date, isTerminal, heureFin
   if (ctrl.hasPrelevementsLabo && ctrl.prelevementsLabo.length > 0) {
     t += `PRÉLÈVEMENTS POUR ANALYSE LABORATOIRE :\n\n`
     ctrl.prelevementsLabo.forEach((p, i) => {
-      const destMap = { emporte: "emporté par l'agent", entrepot: 'laissé en entrepôt' }
+      const destMap = {
+        emporte: "emporté par l'agent",
+        entrepot: isTerminal ? `laissé à ${lieu1Court || 'TDF'}` : `laissé à l'entrepôt`,
+      }
       const modePrelev = p.modePrelev || 'sachets'
       t += `Prélèvement n°${i + 1} :\n`
-      t += `  Référence       : ${p.reference || 'Non renseignée'}\n`
-      t += `  Quantité        : ${p.quantite || 'Non renseignée'}\n`
-      t += `  Mode            : ${modePrelev === 'sachets' ? 'Sachets à sceller' : 'Pince à sceller et ficelle résistante'}\n`
-      t += `  Scellé douanier : ${p.numeroScelle || 'Non renseigné'}\n`
+      t += `  Référence : ${p.reference || 'Non renseignée'}\n`
+      t += `  Quantité  : ${p.quantite || 'Non renseignée'}\n`
       if (modePrelev === 'sachets') {
+        t += `  Mode      : Sachets à sceller\n`
         t += `  Sachets :\n`
-        t += `    • Sachet n°1 (douane) : ${destMap[p.sachet1]}\n`
-        t += `    • Sachet n°2 (douane) : ${destMap[p.sachet2]}\n`
-        t += `    • Sachet n°3 (douane) : ${destMap[p.sachet3]}\n`
-        t += `    • Sachet n°4 (RDE)    : remis à ${commisNom} pour le compte du déclarant en douane\n\n`
+        t += `    • Sachet 1 (douane) — scellé n° ${p.scelleS1 || 'Non renseigné'} : ${destMap[p.sachet1] || ''}\n`
+        t += `    • Sachet 2 (douane) — scellé n° ${p.scelleS2 || 'Non renseigné'} : ${destMap[p.sachet2] || ''}\n`
+        t += `    • Sachet 3 (douane) — scellé n° ${p.scelleS3 || 'Non renseigné'} : ${destMap[p.sachet3] || ''}\n`
+        t += `    • Sachet 4 (RDE)    — scellé n° ${p.scelleS4 || 'Non renseigné'} : remis à ${commisNom} pour le compte du déclarant en douane\n\n`
       } else {
-        t += `  Le prélèvement a été effectué à l'aide d'une pince à sceller et de ficelle résistante, scellé n° ${p.numeroScelle || 'Non renseigné'}.\n\n`
+        t += `  Mode      : Pince à sceller et ficelle résistante\n`
+        t += `  Scellé de la pince : ${p.numeroScelle || 'Non renseigné'}\n\n`
       }
     })
   } else {
