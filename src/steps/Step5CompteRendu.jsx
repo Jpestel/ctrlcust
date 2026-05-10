@@ -51,45 +51,49 @@ function genVisiteConteneur(conteneur, ctrl, plombBL, date, isTerminal, heureFin
     ctrl.cartons.forEach((unite, i) => {
       const type = unite.type || 'carton'
       const typesConfig = {
-        carton:  { label: 'Carton',              article: 'le',  articleIndef: 'un',  labelMin: 'carton',  feminin: false },
-        palette: { label: 'Palette',             article: 'la',  articleIndef: 'une', labelMin: 'palette', feminin: true  },
-        sac:     { label: 'Sac',                 article: 'le',  articleIndef: 'un',  labelMin: 'sac',     feminin: false },
-        caisse:  { label: 'Caisse / Colis bois', article: 'la',  articleIndef: 'une', labelMin: 'caisse',  feminin: true  },
-        vrac:    { label: 'Vrac',                article: null,  articleIndef: null,  labelMin: 'vrac',    feminin: false },
-        article: { label: 'Article',             article: "l'",  articleIndef: 'un',  labelMin: 'article', feminin: false, isArticle: true },
-        unite:   { label: 'Unité isolée',        article: "l'",  articleIndef: 'une', labelMin: 'unité',   feminin: true,  isArticle: true },
-        autre:   { label: 'Unité',               article: "l'",  articleIndef: 'une', labelMin: 'unité',   feminin: true,  isArticle: true },
+        carton:  { label: 'Carton',              article: 'le',  articleIndef: 'un',  labelMin: 'carton',  feminin: false, verbe: 'ouverture' },
+        palette: { label: 'Palette',             article: 'la',  articleIndef: 'une', labelMin: 'palette', feminin: true,  verbe: 'examen' },
+        sac:     { label: 'Sac',                 article: 'le',  articleIndef: 'un',  labelMin: 'sac',     feminin: false, verbe: 'ouverture' },
+        caisse:  { label: 'Caisse / Colis bois', article: 'la',  articleIndef: 'une', labelMin: 'caisse',  feminin: true,  verbe: 'ouverture' },
+        vrac:    { label: 'Vrac',                article: null,  articleIndef: null,  labelMin: 'vrac',    feminin: false, verbe: 'vrac' },
+        article: { label: 'Article',             article: "l'",  articleIndef: 'un',  labelMin: 'article', feminin: false, isArticle: true, verbe: 'presentation' },
+        unite:   { label: 'Unité isolée',        article: "l'",  articleIndef: 'une', labelMin: 'unité',   feminin: true,  isArticle: true, verbe: 'presentation' },
+        autre:   { label: 'Unité',               article: "l'",  articleIndef: 'une', labelMin: 'unité',   feminin: true,  isArticle: true, verbe: 'presentation' },
       }
       const cfg = typesConfig[type] || typesConfig.autre
       const isVrac = type === 'vrac'
       const isArticle = cfg.isArticle === true
 
-      // Ordinal accordé en genre
       const ordinal = cfg.feminin
         ? (ordinauxF[i] || `${i + 1}ème`)
         : (ordinaux[i] || `${i + 1}ème`)
 
+      // Phrase introductive selon le verbe et le nombre d'unités
+      function phraseIntro(ref) {
+        const refStr = ref ? ` portant la réf. ${ref}` : ''
+        const ordStr = nbUnites > 1 ? `${cfg.articleIndef} ${ordinal} ` : `${cfg.articleIndef} `
+        if (cfg.verbe === 'ouverture') {
+          return `${je} ${demande} au ${qualite} l'ouverture ${cfg.feminin ? "d'une" : "d'un"} ${nbUnites > 1 ? ordinal + ' ' : ''}${cfg.labelMin}${refStr}.\n`
+        } else if (cfg.verbe === 'examen') {
+          return `${je} souhaite${deuxAgents ? 'ons' : ''} examiner ${ordStr}${cfg.labelMin}${refStr}.\n`
+        } else if (cfg.verbe === 'presentation') {
+          return `${je} ${demande} au ${qualite} de présenter ${ordStr}${cfg.labelMin}${refStr}.\n`
+        }
+        return ''
+      }
+
       if (isVrac) {
-        if (nbUnites > 1) t += `${je} ${demande} au ${qualite} ${cfg.articleIndef} ${ordinal} lot en vrac${unite.reference ? ` portant la réf. ${unite.reference}` : ''}.\n`
+        t += `Je constate${deuxAgents ? 'ons' : ''} la présence de marchandises en vrac${unite.reference ? ` (réf. ${unite.reference})` : ''}.\n`
         if (unite.descriptionMentions) t += `${unite.descriptionMentions}\n`
         t += `\n`
 
       } else if (isArticle) {
-        if (nbUnites > 1) {
-          t += `${je} ${demande} au ${qualite} ${cfg.articleIndef} ${ordinal} ${cfg.labelMin}${unite.reference ? ` portant la réf. ${unite.reference}` : ''}.\n`
-        } else if (unite.reference) {
-          t += `${je} ${demande} au ${qualite} ${cfg.articleIndef} ${cfg.labelMin} portant la réf. ${unite.reference}.\n`
-        }
+        t += phraseIntro(unite.reference)
         if (unite.descriptionMentions) t += `${unite.descriptionMentions}\n`
         t += `${je} ${demande} au ${qualite} de remettre ${cfg.article}${cfg.labelMin} dans le conteneur.\n\n`
 
       } else {
-        // Titre uniquement si plusieurs unités
-        if (nbUnites > 1) {
-          t += `${je} ${demande} au ${qualite} ${cfg.articleIndef} ${ordinal} ${cfg.labelMin}${unite.reference ? ` portant la réf. ${unite.reference}` : ''}.\n`
-        } else if (unite.reference) {
-          t += `${je} ${demande} au ${qualite} ${cfg.articleIndef} ${cfg.labelMin} portant la réf. ${unite.reference}.\n`
-        }
+        t += phraseIntro(unite.reference)
         if (unite.descriptionMentions) t += `${unite.descriptionMentions}\n`
 
         if (unite.prelevementExamen && unite.detailPrelevementExamen) {
