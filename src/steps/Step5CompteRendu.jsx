@@ -45,63 +45,84 @@ function genVisiteConteneur(conteneur, ctrl, plombBL, date, isTerminal, heureFin
     const nbUnites = ctrl.cartons.length
 
     // Ordinaux français
-    const ordinaux = ['premier', 'second', 'troisième', 'quatrième', 'cinquième', 'sixième', 'septième', 'huitième', 'neuvième', 'dixième']
-    const ordinauxF = ['première', 'seconde', 'troisième', 'quatrième', 'cinquième', 'sixième', 'septième', 'huitième', 'neuvième', 'dixième']
+    const ordinaux =  ['premier','deuxième','troisième','quatrième','cinquième','sixième','septième','huitième','neuvième','dixième']
+    const ordinauxF = ['première','deuxième','troisième','quatrième','cinquième','sixième','septième','huitième','neuvième','dixième']
+
+    // Compteur par type pour calculer l'ordinal propre à chaque type
+    const countByType = {}
 
     ctrl.cartons.forEach((unite, i) => {
       const type = unite.type || 'carton'
       const typesConfig = {
-        carton:  { label: 'Carton',              article: 'le',  articleIndef: 'un',  labelMin: 'carton',  feminin: false, verbe: 'ouverture' },
-        palette: { label: 'Palette',             article: 'la',  articleIndef: 'une', labelMin: 'palette', feminin: true,  verbe: 'examen' },
-        sac:     { label: 'Sac',                 article: 'le',  articleIndef: 'un',  labelMin: 'sac',     feminin: false, verbe: 'ouverture' },
-        caisse:  { label: 'Caisse / Colis bois', article: 'la',  articleIndef: 'une', labelMin: 'caisse',  feminin: true,  verbe: 'ouverture' },
-        vrac:    { label: 'Vrac',                article: null,  articleIndef: null,  labelMin: 'vrac',    feminin: false, verbe: 'vrac' },
-        article: { label: 'Article',             article: "l'",  articleIndef: 'un',  labelMin: 'article', feminin: false, isArticle: true, verbe: 'presentation' },
-        unite:   { label: 'Unité isolée',        article: "l'",  articleIndef: 'une', labelMin: 'unité',   feminin: true,  isArticle: true, verbe: 'presentation' },
-        autre:   { label: 'Unité',               article: "l'",  articleIndef: 'une', labelMin: 'unité',   feminin: true,  isArticle: true, verbe: 'presentation' },
+        carton:  { article: 'le',  articleIndef: 'un',  labelMin: 'carton',  feminin: false, verbe: 'ouverture' },
+        palette: { article: 'la',  articleIndef: 'une', labelMin: 'palette', feminin: true,  verbe: 'examen'    },
+        sac:     { article: 'le',  articleIndef: 'un',  labelMin: 'sac',     feminin: false, verbe: 'ouverture' },
+        caisse:  { article: 'la',  articleIndef: 'une', labelMin: 'caisse',  feminin: true,  verbe: 'ouverture' },
+        vrac:    { article: null,  articleIndef: null,  labelMin: 'vrac',    feminin: false, verbe: 'vrac'      },
+        article: { article: "l'",  articleIndef: 'un',  labelMin: 'article', feminin: false, verbe: 'presentation', isArticle: true },
+        unite:   { article: "l'",  articleIndef: 'une', labelMin: 'unité',   feminin: true,  verbe: 'presentation', isArticle: true },
+        autre:   { article: "l'",  articleIndef: 'une', labelMin: 'unité',   feminin: true,  verbe: 'presentation', isArticle: true },
       }
       const cfg = typesConfig[type] || typesConfig.autre
       const isVrac = type === 'vrac'
-      const isArticle = cfg.isArticle === true
+      const isArticle = !!cfg.isArticle
+
+      // Compter les occurrences de ce type pour l'ordinal
+      countByType[type] = (countByType[type] || 0) + 1
+      const idxType = countByType[type] - 1
+      // Nombre total de ce type dans la liste
+      const totalOfType = ctrl.cartons.filter(u => (u.type || 'carton') === type).length
 
       const ordinal = cfg.feminin
-        ? (ordinauxF[i] || `${i + 1}ème`)
-        : (ordinaux[i] || `${i + 1}ème`)
+        ? (ordinauxF[idxType] || `${idxType + 1}ème`)
+        : (ordinaux[idxType] || `${idxType + 1}ème`)
 
-      // Phrase introductive selon le verbe et le nombre d'unités
-      function phraseIntro(ref) {
-        const refStr = ref ? ` portant la réf. ${ref}` : ''
-        const ordStr = nbUnites > 1 ? `${cfg.articleIndef} ${ordinal} ` : `${cfg.articleIndef} `
-        if (cfg.verbe === 'ouverture') {
-          return `${je} ${demande} au ${qualite} l'ouverture ${cfg.feminin ? "d'une" : "d'un"} ${nbUnites > 1 ? ordinal + ' ' : ''}${cfg.labelMin}${refStr}.\n`
-        } else if (cfg.verbe === 'examen') {
-          return `${je} souhaite${deuxAgents ? 'ons' : ''} examiner ${ordStr}${cfg.labelMin}${refStr}.\n`
-        } else if (cfg.verbe === 'presentation') {
-          return `${je} ${demande} au ${qualite} de présenter ${ordStr}${cfg.labelMin}${refStr}.\n`
+      // Référence — ne pas afficher si vide ou "SANS REF"
+      const ref = unite.reference?.trim()
+      const refStr = (ref && ref.toUpperCase() !== 'SANS REF') ? ` portant la réf. ${ref}` : ''
+
+      // Phrase introductive
+      function phraseIntro() {
+        if (totalOfType === 1) {
+          // Un seul de ce type
+          if (cfg.verbe === 'ouverture') return `${je} ${demande} au ${qualite} l'ouverture ${cfg.feminin ? "d'une" : "d'un"} ${cfg.labelMin}${refStr}.\n`
+          if (cfg.verbe === 'examen')    return `${je} souhaite${deuxAgents ? 'ons' : ''} examiner ${cfg.articleIndef} ${cfg.labelMin}${refStr}.\n`
+          if (cfg.verbe === 'presentation') return `${je} ${demande} au ${qualite} de présenter ${cfg.articleIndef} ${cfg.labelMin}${refStr}.\n`
+        } else {
+          // Plusieurs du même type → ordinal
+          if (cfg.verbe === 'ouverture') return `${je} ${demande} au ${qualite} l'ouverture ${cfg.feminin ? "d'une" : "d'un"} ${ordinal} ${cfg.labelMin}${refStr}.\n`
+          if (cfg.verbe === 'examen')    return `${je} souhaite${deuxAgents ? 'ons' : ''} examiner ${cfg.articleIndef} ${ordinal} ${cfg.labelMin}${refStr}.\n`
+          if (cfg.verbe === 'presentation') return `${je} ${demande} au ${qualite} de présenter ${cfg.articleIndef} ${ordinal} ${cfg.labelMin}${refStr}.\n`
         }
         return ''
       }
 
+      // Phrase de fermeture adaptée au type
+      function phraseFermeture() {
+        if (type === 'palette') return `${je} ${fais} replacer la palette dans sa position initiale.\n\n`
+        if (isArticle) return ''
+        if (isVrac) return ''
+        return `${je} ${fais} refermer ${cfg.article} ${cfg.labelMin} et apposer dessus les mentions "Visite douane" et la date ${date}.\n\n`
+      }
+
       if (isVrac) {
-        t += `Je constate${deuxAgents ? 'ons' : ''} la présence de marchandises en vrac${unite.reference ? ` (réf. ${unite.reference})` : ''}.\n`
+        t += `${je} constate${deuxAgents ? 'ons' : ''} la présence de marchandises en vrac${refStr}.\n`
         if (unite.descriptionMentions) t += `${unite.descriptionMentions}\n`
         t += `\n`
 
       } else if (isArticle) {
-        t += phraseIntro(unite.reference)
+        t += phraseIntro()
         if (unite.descriptionMentions) t += `${unite.descriptionMentions}\n`
         t += `${je} ${demande} au ${qualite} de remettre ${cfg.article}${cfg.labelMin} dans le conteneur.\n\n`
 
       } else {
-        t += phraseIntro(unite.reference)
+        t += phraseIntro()
         if (unite.descriptionMentions) t += `${unite.descriptionMentions}\n`
-
         if (unite.prelevementExamen && unite.detailPrelevementExamen) {
           t += `${je} prélève${deuxAgents ? 'ons' : ''} ${unite.detailPrelevementExamen} pour examen à ${deuxAgents ? 'notre' : 'mon'} bureau. Ces articles seront restitués au RDE après examen.\n`
         }
-
         if (unite.mentionFermeture === 'complet') {
-          t += `${je} ${fais} refermer ${cfg.article} ${cfg.labelMin} et apposer dessus les mentions "Visite douane" et la date ${date}.\n\n`
+          t += phraseFermeture()
         } else if (unite.mentionFermeture === 'libre' && unite.mentionLibre) {
           t += `${je} ${fais} refermer ${cfg.article} ${cfg.labelMin} et apposer la mention : "${unite.mentionLibre}".\n\n`
         } else {
@@ -111,7 +132,7 @@ function genVisiteConteneur(conteneur, ctrl, plombBL, date, isTerminal, heureFin
     })
   }
 
-  // Prélèvements labo
+  // Prélèvements labo — APRÈS toutes les unités
   if (ctrl.hasPrelevementsLabo && ctrl.prelevementsLabo.length > 0) {
     const nb = ctrl.prelevementsLabo.length
     const nousJe = deuxAgents ? 'Nous décidons' : 'Je décide'
