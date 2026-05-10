@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { uid } from '../utils'
 import PhrasesRapides from '../components/PhrasesRapides'
 
@@ -21,6 +21,8 @@ function PhrasesRapidesUnite({ value, onChange, crn, articleNum }) {
   const [open, setOpen] = useState(false)
   const [checked, setChecked] = useState([])
   const [newPhrase, setNewPhrase] = useState('')
+  const dragIdx = useRef(null)
+  const dragOverIdx = useRef(null)
 
   useEffect(() => { localStorage.setItem(key, JSON.stringify(phrases)) }, [phrases])
 
@@ -44,6 +46,29 @@ function PhrasesRapidesUnite({ value, onChange, crn, articleNum }) {
     setPhrases(p => [...p, t])
   }
 
+  function onDragStart(i) { dragIdx.current = i }
+  function onDragOver(e, i) { e.preventDefault(); dragOverIdx.current = i }
+  function onDrop() {
+    const from = dragIdx.current
+    const to = dragOverIdx.current
+    if (from === null || to === null || from === to) return
+    setPhrases(prev => {
+      const next = [...prev]
+      const [moved] = next.splice(from, 1)
+      next.splice(to, 0, moved)
+      // Ajuster les indices cochés
+      setChecked(c => c.map(idx => {
+        if (idx === from) return to
+        if (from < to && idx > from && idx <= to) return idx - 1
+        if (from > to && idx >= to && idx < from) return idx + 1
+        return idx
+      }))
+      return next
+    })
+    dragIdx.current = null
+    dragOverIdx.current = null
+  }
+
   return (
     <div className="phrases-rapides">
       <button type="button" className="phrases-toggle" onClick={() => setOpen(o => !o)}>
@@ -53,7 +78,14 @@ function PhrasesRapidesUnite({ value, onChange, crn, articleNum }) {
         <div className="phrases-panel">
           <ul style={{ listStyle: 'none', margin: 0, padding: '0.25rem 0' }}>
             {phrases.map((phrase, i) => (
-              <li key={i} className="phrase-item-check">
+              <li key={i} className="phrase-item-check"
+                draggable
+                onDragStart={() => onDragStart(i)}
+                onDragOver={e => onDragOver(e, i)}
+                onDrop={onDrop}
+                style={{ cursor: 'grab' }}
+              >
+                <span style={{ color: '#94a3b8', fontSize: '0.8rem', flexShrink: 0, marginRight: '0.25rem' }}>⠿</span>
                 <input type="checkbox" checked={checked.includes(i)} onChange={() => toggle(i)} />
                 <span className="phrase-check-text" onClick={() => toggle(i)}>{resolve(phrase)}</span>
                 <button className="phrase-check-del" onClick={() => setPhrases(p => p.filter((_, idx) => idx !== i))}>✕</button>
