@@ -7,9 +7,11 @@ import Step2PlombsBL from './steps/Step2PlombsBL'
 import Step3Terrain from './steps/Step3Terrain'
 import Step4Photos from './steps/Step4Photos'
 import Step5CompteRendu from './steps/Step5CompteRendu'
+import { PINScreen, AdminPage, initMasterPIN, getSession, clearSession } from './auth'
 
 const STORAGE_KEY = 'douane-controle-v1'
 const AGENT_KEY = 'douane-agent-name'
+const DEFAULT_MASTER_PIN = '66713'
 
 // Étapes selon le type de contrôle
 const STEPS_TERMINAL = [
@@ -101,6 +103,9 @@ function restorePhotos(photos = []) {
 }
 
 export default function App() {
+  const [unlocked, setUnlocked] = useState(() => !!getSession())
+  const [role, setRole] = useState(() => getSession()?.role || null)
+  const [showAdmin, setShowAdmin] = useState(false)
   const [step, setStep] = useState(0)
   const [data, setData] = useState(() => ({
     ...INITIAL_DATA,
@@ -118,6 +123,9 @@ export default function App() {
   useEffect(() => {
     if (!steps.find(s => s.id === step)) setStep(0)
   }, [data.lieuControle])
+
+  // Initialiser le PIN maître par défaut au premier lancement
+  useEffect(() => { initMasterPIN(DEFAULT_MASTER_PIN) }, [])
 
   // Chargement initial depuis localStorage
   useEffect(() => {
@@ -248,6 +256,16 @@ export default function App() {
   const lieu = data.lieuControle === 'libre' ? data.lieuControleLibre : data.lieuControle
   const lastStepId = steps[steps.length - 1].id
 
+  // Écran de verrouillage
+  if (!unlocked) {
+    return <PINScreen onUnlock={r => { setRole(r); setUnlocked(true) }} />
+  }
+
+  // Page admin (maître uniquement)
+  if (showAdmin) {
+    return <AdminPage onClose={() => setShowAdmin(false)} />
+  }
+
   return (
     <div className="app">
       <header className="app-header">
@@ -257,18 +275,18 @@ export default function App() {
         </div>
         <div className="header-right">
           <div className="toolbar">
+            {role === 'master' && (
+              <button className="toolbar-btn" onClick={() => setShowAdmin(true)}>⚙️ Admin</button>
+            )}
             <button className="toolbar-btn" onClick={nouveauControle}>+ Nouveau</button>
             <label className="toolbar-btn">
               ↑ Charger
-              <input
-                ref={importRef}
-                type="file"
-                accept=".json"
-                hidden
-                onChange={e => { if (e.target.files[0]) { importerJSON(e.target.files[0]); e.target.value = '' } }}
-              />
+              <input ref={importRef} type="file" accept=".json" hidden
+                onChange={e => { if (e.target.files[0]) { importerJSON(e.target.files[0]); e.target.value = '' } }} />
             </label>
             <button className="toolbar-btn" onClick={exporterJSON}>↓ Sauvegarder</button>
+            <button className="toolbar-btn" onClick={() => { clearSession(); setUnlocked(false); setRole(null) }}
+              title="Verrouiller" style={{ opacity: 0.7 }}>🔒</button>
           </div>
           {savedAt && <div className="autosave-indicator">✓ Sauvegardé à {savedAt}</div>}
           <span className={`flux-badge flux-${data.flux}`}>
