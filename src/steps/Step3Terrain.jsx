@@ -21,8 +21,6 @@ function PhrasesRapidesUnite({ value, onChange, crn, articleNum }) {
   const [open, setOpen] = useState(false)
   const [checked, setChecked] = useState([])
   const [newPhrase, setNewPhrase] = useState('')
-  const dragIdx = useRef(null)
-  const dragOverIdx = useRef(null)
 
   useEffect(() => { localStorage.setItem(key, JSON.stringify(phrases)) }, [phrases])
 
@@ -46,27 +44,24 @@ function PhrasesRapidesUnite({ value, onChange, crn, articleNum }) {
     setPhrases(p => [...p, t])
   }
 
-  function onDragStart(i) { dragIdx.current = i }
-  function onDragOver(e, i) { e.preventDefault(); dragOverIdx.current = i }
-  function onDrop() {
-    const from = dragIdx.current
-    const to = dragOverIdx.current
-    if (from === null || to === null || from === to) return
+  function moveUp(i) {
+    if (i === 0) return
     setPhrases(prev => {
       const next = [...prev]
-      const [moved] = next.splice(from, 1)
-      next.splice(to, 0, moved)
-      // Ajuster les indices cochés
-      setChecked(c => c.map(idx => {
-        if (idx === from) return to
-        if (from < to && idx > from && idx <= to) return idx - 1
-        if (from > to && idx >= to && idx < from) return idx + 1
-        return idx
-      }))
+      ;[next[i - 1], next[i]] = [next[i], next[i - 1]]
+      setChecked(c => c.map(x => x === i ? i - 1 : x === i - 1 ? i : x))
       return next
     })
-    dragIdx.current = null
-    dragOverIdx.current = null
+  }
+
+  function moveDown(i) {
+    if (i === phrases.length - 1) return
+    setPhrases(prev => {
+      const next = [...prev]
+      ;[next[i], next[i + 1]] = [next[i + 1], next[i]]
+      setChecked(c => c.map(x => x === i ? i + 1 : x === i + 1 ? i : x))
+      return next
+    })
   }
 
   return (
@@ -78,16 +73,15 @@ function PhrasesRapidesUnite({ value, onChange, crn, articleNum }) {
         <div className="phrases-panel">
           <ul style={{ listStyle: 'none', margin: 0, padding: '0.25rem 0' }}>
             {phrases.map((phrase, i) => (
-              <li key={i} className="phrase-item-check"
-                draggable
-                onDragStart={() => onDragStart(i)}
-                onDragOver={e => onDragOver(e, i)}
-                onDrop={onDrop}
-                style={{ cursor: 'grab' }}
-              >
-                <span style={{ color: '#94a3b8', fontSize: '0.8rem', flexShrink: 0, marginRight: '0.25rem' }}>⠿</span>
+              <li key={i} className="phrase-item-check">
                 <input type="checkbox" checked={checked.includes(i)} onChange={() => toggle(i)} />
                 <span className="phrase-check-text" onClick={() => toggle(i)}>{resolve(phrase)}</span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.1rem', flexShrink: 0 }}>
+                  <button type="button" onClick={() => moveUp(i)} disabled={i === 0}
+                    style={{ background: 'none', border: 'none', cursor: i === 0 ? 'default' : 'pointer', color: i === 0 ? '#cbd5e1' : '#64748b', fontSize: '0.7rem', padding: 0, lineHeight: 1 }}>▲</button>
+                  <button type="button" onClick={() => moveDown(i)} disabled={i === phrases.length - 1}
+                    style={{ background: 'none', border: 'none', cursor: i === phrases.length - 1 ? 'default' : 'pointer', color: i === phrases.length - 1 ? '#cbd5e1' : '#64748b', fontSize: '0.7rem', padding: 0, lineHeight: 1 }}>▼</button>
+                </div>
                 <button className="phrase-check-del" onClick={() => setPhrases(p => p.filter((_, idx) => idx !== i))}>✕</button>
               </li>
             ))}
