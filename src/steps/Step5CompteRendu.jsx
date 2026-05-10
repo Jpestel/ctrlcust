@@ -399,6 +399,69 @@ export default function Step5CompteRendu({ data }) {
     setZipping(false)
   }
 
+  const [copiedMail, setCopiedMail] = useState(false)
+
+  function generateMailRDE() {
+    const crn = data.docDeclaration?.data?.crn || data.numeroDeclaration || '[N° déclaration]'
+    const date = formatDate(data.dateControle) || '__/__/____'
+    const heure = data.heureControle ? data.heureControle.replace(':', 'h') : '__h__'
+    const importateur = data.importateur || '[Importateur]'
+    const representant = data.representant && data.representant !== 'Case vide' ? data.representant : '[RDE]'
+    const agent = data.nomAgent || '[Nom agent]'
+    const civ = data.civiliteAgent || 'M.'
+
+    // Récupérer tous les prélèvements labo de tous les conteneurs
+    const allPrelevements = []
+    ;(data.controles || []).forEach(ctrl => {
+      if (ctrl.hasPrelevementsLabo && ctrl.prelevementsLabo?.length > 0) {
+        ctrl.prelevementsLabo.forEach(p => allPrelevements.push(p))
+      }
+    })
+
+    if (allPrelevements.length === 0) return ''
+
+    let mail = `Objet : Prélèvement pour analyse laboratoire — Déclaration N° ${crn} — ${date}\n\n`
+    mail += `Madame, Monsieur,\n\n`
+    mail += `Dans le cadre du contrôle douanier effectué le ${date} à ${heure} `
+    mail += `sur la déclaration d'importation N° ${crn} déposée pour le compte de ${importateur}, `
+    mail += `${civ} ${agent}, contrôleur des douanes au bureau du Havre, `
+    mail += `a procédé à ${allPrelevements.length} prélèvement${allPrelevements.length > 1 ? 's' : ''} pour analyse laboratoire.\n\n`
+
+    mail += `DÉTAIL DES PRÉLÈVEMENTS :\n`
+    mail += `${'─'.repeat(40)}\n`
+    allPrelevements.forEach((p, i) => {
+      mail += `Prélèvement n°${i + 1} :\n`
+      mail += `  Référence : ${p.reference || 'Non renseignée'}\n`
+      mail += `  Quantité  : ${p.quantite || 'Non renseignée'}\n`
+      if ((p.modePrelev || 'sachets') === 'sachets') {
+        mail += `  Scellés   : Sachet 1 n°${p.scelleS1 || '-'} / Sachet 2 n°${p.scelleS2 || '-'} / Sachet 3 n°${p.scelleS3 || '-'} / Sachet 4 (RDE) n°${p.scelleS4 || '-'}\n`
+      } else {
+        mail += `  Scellé pince : ${p.numeroScelle || 'Non renseigné'}\n`
+      }
+    })
+
+    mail += `\nNous vous remercions de bien vouloir nous faire parvenir, dans les meilleurs délais, `
+    mail += `la fiche de représentativité dûment complétée et signée pour chacun des prélèvements effectués.\n\n`
+    mail += `Ce document est nécessaire pour valider la représentativité des échantillons prélevés `
+    mail += `et permettre l'analyse laboratoire dans les conditions réglementaires requises.\n\n`
+    mail += `Nous restons à votre disposition pour tout renseignement complémentaire.\n\n`
+    mail += `Cordialement,\n\n`
+    mail += `${civ} ${agent}\n`
+    mail += `Contrôleur des douanes — Bureau du Havre`
+
+    return mail
+  }
+
+  const mailRDE = generateMailRDE()
+
+  function handleCopyMail() {
+    if (!mailRDE) return
+    navigator.clipboard.writeText(mailRDE).then(() => {
+      setCopiedMail(true)
+      setTimeout(() => setCopiedMail(false), 2500)
+    })
+  }
+
   return (
     <>
       <div className="card">
@@ -419,6 +482,23 @@ export default function Step5CompteRendu({ data }) {
           {shareStatus === 'error' && <span style={{ color: '#dc2626', fontWeight: 600 }}>✗ Erreur partage</span>}
         </div>
       </div>
+
+      {mailRDE && (
+        <div className="card">
+          <div className="card-title">✉️ Mail RDE — Demande de fiche de représentativité</div>
+          <div className="alert alert-info" style={{ marginBottom: '0.75rem' }}>
+            Copiez ce texte et collez-le dans votre messagerie pour l'envoyer au représentant en douane.
+          </div>
+          <div className="compte-rendu-box" style={{ whiteSpace: 'pre-wrap', fontSize: '0.85rem' }}>
+            {mailRDE}
+          </div>
+          <div style={{ marginTop: '0.75rem' }}>
+            <button className="btn btn-primary" onClick={handleCopyMail}>
+              {copiedMail ? '✓ Copié !' : 'Copier le texte du mail'}
+            </button>
+          </div>
+        </div>
+      )}
 
       {data.photos.length > 0 && (
         <div className="card">
