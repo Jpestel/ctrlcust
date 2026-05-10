@@ -99,7 +99,10 @@ function genVisiteConteneur(conteneur, ctrl, plombBL, date, isTerminal, heureFin
         t += `    • Sachet 1 (douane) — scellé n° ${p.scelleS1 || 'Non renseigné'} : ${destMap[p.sachet1] || ''}\n`
         t += `    • Sachet 2 (douane) — scellé n° ${p.scelleS2 || 'Non renseigné'} : ${destMap[p.sachet2] || ''}\n`
         t += `    • Sachet 3 (douane) — scellé n° ${p.scelleS3 || 'Non renseigné'} : ${destMap[p.sachet3] || ''}\n`
-        t += `    • Sachet 4 (RDE)    — scellé n° ${p.scelleS4 || 'Non renseigné'} : remis à ${commisNom} pour le compte du déclarant en douane\n\n`
+        const s4dest = p.sachet4 === 'laisse'
+          ? `${lieu ? `laissé à ${lieu}` : 'laissé en entrepôt'} — remis au ${commisNom} pour le compte du déclarant en douane`
+          : `emporté par ${commisNom} pour le compte du déclarant en douane`
+        t += `    • Sachet 4 (RDE)    — scellé n° ${p.scelleS4 || 'Non renseigné'} : ${s4dest}\n\n`
       } else {
         t += `  Mode      : Pince à sceller et ficelle résistante\n`
         t += `  Scellé de la pince : ${p.numeroScelle || 'Non renseigné'}\n\n`

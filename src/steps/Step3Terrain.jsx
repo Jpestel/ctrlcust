@@ -324,7 +324,10 @@ function PrelevementCard({ prelev, index, onUpdate, onRemove, lieu }) {
               <input type="text" placeholder="N° scellé" value={prelev.scelleS4 || ''}
                 onChange={e => onUpdate({ scelleS4: e.target.value.toUpperCase() })}
                 style={{ fontFamily: 'monospace', width: '130px' }} />
-              <span className="sachet-fixed">Remis au commis/coursier pour le RDE</span>
+              <select value={prelev.sachet4 || 'emporte'} onChange={e => onUpdate({ sachet4: e.target.value })}>
+                <option value="emporte">Emporté par le commis/coursier</option>
+                <option value="laisse">{lieuLabel} — remis au commis/coursier</option>
+              </select>
             </div>
           </div>
         </div>
