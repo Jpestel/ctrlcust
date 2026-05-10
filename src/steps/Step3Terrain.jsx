@@ -157,44 +157,22 @@ function UniteCard({ unite, index, onUpdate, onRemove, dateControle, crn, articl
           <label>Statut à la fermeture</label>
           <div className="radio-group">
             <label className="radio-option">
-              <input
-                type="radio"
-                name={`fermeture-${unite.id}`}
-                value="aucun"
+              <input type="radio" name={`fermeture-${unite.id}`} value="aucun"
                 checked={!unite.mentionFermeture || unite.mentionFermeture === 'aucun'}
-                onChange={() => onUpdate({ mentionFermeture: 'aucun' })}
-              />
+                onChange={() => onUpdate({ mentionFermeture: 'aucun' })} />
               Non renseigné
             </label>
             <label className="radio-option">
-              <input
-                type="radio"
-                name={`fermeture-${unite.id}`}
-                value="complet"
+              <input type="radio" name={`fermeture-${unite.id}`} value="complet"
                 checked={unite.mentionFermeture === 'complet'}
-                onChange={() => onUpdate({ mentionFermeture: 'complet' })}
-              />
+                onChange={() => onUpdate({ mentionFermeture: 'complet' })} />
               Complet
             </label>
             <label className="radio-option">
-              <input
-                type="radio"
-                name={`fermeture-${unite.id}`}
-                value="libre"
+              <input type="radio" name={`fermeture-${unite.id}`} value="libre"
                 checked={unite.mentionFermeture === 'libre'}
-                onChange={() => onUpdate({ mentionFermeture: 'libre' })}
-              />
+                onChange={() => onUpdate({ mentionFermeture: 'libre' })} />
               Mention personnalisée
-            </label>
-            <label className="radio-option">
-              <input
-                type="radio"
-                name={`fermeture-${unite.id}`}
-                value="prelevement_examen"
-                checked={unite.mentionFermeture === 'prelevement_examen'}
-                onChange={() => onUpdate({ mentionFermeture: 'prelevement_examen' })}
-              />
-              Prélèvement pour examen
             </label>
           </div>
 
@@ -203,28 +181,33 @@ function UniteCard({ unite, index, onUpdate, onRemove, dateControle, crn, articl
               Mention apposée : "Visite douane — {dateStr} — Complet"
             </div>
           )}
-
           {unite.mentionFermeture === 'libre' && (
-            <input
-              type="text"
-              style={{ marginTop: '0.5rem' }}
+            <input type="text" style={{ marginTop: '0.5rem' }}
               placeholder={`ex. "Visite douane — ${dateStr} — Vu conforme"`}
               value={unite.mentionLibre || ''}
-              onChange={e => onUpdate({ mentionLibre: e.target.value })}
-            />
+              onChange={e => onUpdate({ mentionLibre: e.target.value })} />
           )}
         </div>
       )}
 
-      {!isVrac && !isArticle && unite.mentionFermeture === 'prelevement_examen' && (
+      {/* Prélèvement pour examen à mon bureau — distinct du labo */}
+      {!isVrac && (
         <div className="form-group">
-          <label>Détail du prélèvement pour examen</label>
-          <textarea
-            placeholder="Précisez les articles prélevés et leur quantité..."
-            value={unite.detailPrelevementExamen}
-            onChange={e => onUpdate({ detailPrelevementExamen: e.target.value })}
-          />
-          <p className="helper">Ces articles seront rendus au RDE après examen.</p>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontWeight: 500 }}>
+            <input type="checkbox"
+              checked={unite.prelevementExamen || false}
+              onChange={e => onUpdate({ prelevementExamen: e.target.checked })} />
+            Prélèvement d'unités pour examen à mon/notre bureau
+          </label>
+          {unite.prelevementExamen && (
+            <div style={{ marginTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              <input type="text"
+                placeholder="Quantité et description (ex. 2 unités prélevées pour examen)"
+                value={unite.detailPrelevementExamen || ''}
+                onChange={e => onUpdate({ detailPrelevementExamen: e.target.value })} />
+              <p className="helper">Ces articles seront restitués au RDE après examen à votre bureau.</p>
+            </div>
+          )}
         </div>
       )}
     </div>

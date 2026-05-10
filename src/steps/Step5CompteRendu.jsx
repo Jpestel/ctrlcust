@@ -69,13 +69,18 @@ function genVisiteConteneur(conteneur, ctrl, plombBL, date, isTerminal, heureFin
       } else {
         t += `${cfg.label} n°${i + 1}${unite.reference ? ` — Référence : ${unite.reference}` : ''}\n`
         if (unite.descriptionMentions) t += `${unite.descriptionMentions}\n`
+
+        // Prélèvement pour examen bureau (distinct du labo)
+        if (unite.prelevementExamen && unite.detailPrelevementExamen) {
+          t += `${je} prélève${deuxAgents ? 'ons' : ''} ${unite.detailPrelevementExamen} pour examen à ${deuxAgents ? 'notre' : 'mon'} bureau. Ces articles seront restitués au RDE après examen.\n`
+        }
+
         if (unite.mentionFermeture === 'complet') {
           t += `${je} ${fais} refermer ${cfg.article} ${cfg.labelMin} et apposer dessus les mentions "Visite douane" et la date ${date}.\n\n`
         } else if (unite.mentionFermeture === 'libre' && unite.mentionLibre) {
           t += `${je} ${fais} refermer ${cfg.article} ${cfg.labelMin} et apposer la mention : "${unite.mentionLibre}".\n\n`
-        } else if (unite.mentionFermeture === 'prelevement_examen') {
-          const detail = unite.detailPrelevementExamen ? ` (${unite.detailPrelevementExamen})` : ''
-          t += `Un prélèvement pour examen a été effectué${detail}. ${je} ${fais} refermer ${cfg.article} ${cfg.labelMin} avec mention du prélèvement. Les articles prélevés seront restitués au RDE après examen.\n\n`
+        } else {
+          t += `\n`
         }
       }
     })
