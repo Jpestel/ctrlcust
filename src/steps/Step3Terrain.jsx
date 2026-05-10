@@ -193,11 +193,12 @@ function UniteCard({ unite, index, onUpdate, onRemove, dateControle, crn, articl
       {/* Prélèvement pour examen à mon bureau — distinct du labo */}
       {!isVrac && (
         <div className="form-group">
-          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontWeight: 500 }}>
+          <label style={{ display: 'flex', flexDirection: 'row', alignItems: 'flex-start', gap: '0.5rem', cursor: 'pointer', fontWeight: 500, justifyContent: 'flex-start' }}>
             <input type="checkbox"
               checked={unite.prelevementExamen || false}
-              onChange={e => onUpdate({ prelevementExamen: e.target.checked })} />
-            Prélèvement d'unités pour examen à mon/notre bureau
+              onChange={e => onUpdate({ prelevementExamen: e.target.checked })}
+              style={{ marginTop: '0.2rem', flexShrink: 0 }} />
+            <span>Prélèvement d'unités pour examen à mon/notre bureau</span>
           </label>
           {unite.prelevementExamen && (
             <div style={{ marginTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
