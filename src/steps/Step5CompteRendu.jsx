@@ -83,33 +83,48 @@ function genVisiteConteneur(conteneur, ctrl, plombBL, date, isTerminal, heureFin
 
   // Prélèvements labo
   if (ctrl.hasPrelevementsLabo && ctrl.prelevementsLabo.length > 0) {
-    t += `PRÉLÈVEMENTS POUR ANALYSE LABORATOIRE :\n\n`
+    const nb = ctrl.prelevementsLabo.length
+    const nousJe = deuxAgents ? 'Nous décidons' : 'Je décide'
+    const mettons = deuxAgents ? 'Nous mettons' : 'Je mets'
+    const emportons = deuxAgents ? 'nous emportons avec nous à notre bureau' : "j'emporte avec moi à mon bureau"
+
+    t += `${nousJe} d'effectuer ${nb} prélèvement${nb > 1 ? 's' : ''}.\n\n`
+
     ctrl.prelevementsLabo.forEach((p, i) => {
-      const destMap = {
-        emporte: "emporté par l'agent",
-        entrepot: lieu ? `laissé à ${lieu}` : "laissé en entrepôt",
-      }
       const modePrelev = p.modePrelev || 'sachets'
-      t += `Prélèvement n°${i + 1} :\n`
-      t += `  Référence : ${p.reference || 'Non renseignée'}\n`
-      t += `  Quantité  : ${p.quantite || 'Non renseignée'}\n`
+      const ref = p.reference ? `de la référence ${p.reference}` : ''
+      const qte = p.quantite ? `, quantité : ${p.quantite}` : ''
+
+      t += `Prélèvement n°${i + 1}${ref ? ` — ${ref}` : ''}${qte}.\n`
+
       if (modePrelev === 'sachets') {
-        t += `  Mode      : Sachets à sceller\n`
-        t += `  Sachets :\n`
-        t += `    • Sachet 1 (douane) — scellé n° ${p.scelleS1 || 'Non renseigné'} : ${destMap[p.sachet1] || ''}\n`
-        t += `    • Sachet 2 (douane) — scellé n° ${p.scelleS2 || 'Non renseigné'} : ${destMap[p.sachet2] || ''}\n`
-        t += `    • Sachet 3 (douane) — scellé n° ${p.scelleS3 || 'Non renseigné'} : ${destMap[p.sachet3] || ''}\n`
+        t += `${mettons} ce${nb > 1 ? 's' : ''} prélèvement${nb > 1 ? 's' : ''} dans des sachets portant les numéros de scellés suivants :\n`
+
+        // Sachets 1-3 (douane)
+        const sachetsDouane = [
+          { num: p.scelleS1, dest: p.sachet1 },
+          { num: p.scelleS2, dest: p.sachet2 },
+          { num: p.scelleS3, dest: p.sachet3 },
+        ]
+        sachetsDouane.forEach((s, idx) => {
+          const destPhrase = s.dest === 'emporte'
+            ? `${emportons}`
+            : `laissé${deuxAgents ? 's' : ''} à ${lieu || 'TDF'}`
+          t += `  • Sachet ${idx + 1} (douane) — scellé n° ${s.num || 'Non renseigné'} : ${destPhrase}\n`
+        })
+
+        // Sachet 4 (RDE)
         const s4dest = p.sachet4 === 'laisse'
-          ? `${lieu ? `laissé à ${lieu}` : 'laissé en entrepôt'} — remis au ${commisNom} pour le compte du déclarant en douane`
-          : `emporté par ${commisNom} pour le compte du déclarant en douane`
-        t += `    • Sachet 4 (RDE)    — scellé n° ${p.scelleS4 || 'Non renseigné'} : ${s4dest}\n\n`
+          ? `laissé à ${lieu || 'TDF'} et remis à ${commisNom}`
+          : `remis à ${commisNom}`
+        t += `  • Sachet 4 (RDE) — scellé n° ${p.scelleS4 || 'Non renseigné'} : ${s4dest}\n\n`
+
       } else {
-        t += `  Mode      : Pince à sceller et ficelle résistante\n`
-        t += `  Scellé de la pince : ${p.numeroScelle || 'Non renseigné'}\n\n`
+        t += `Le prélèvement est effectué à l'aide d'une pince à sceller et de ficelle résistante, scellé n° ${p.numeroScelle || 'Non renseigné'}.\n\n`
       }
     })
   } else {
-    t += `${prelevons} aucun échantillon.\n\n`
+    t += `${je} ne prélève${deuxAgents ? 'ons' : ''} aucun échantillon.\n\n`
   }
 
   if (isTerminal && ctrl.nouveauPlomb) {
