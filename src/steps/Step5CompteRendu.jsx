@@ -42,35 +42,56 @@ function genVisiteConteneur(conteneur, ctrl, plombBL, date, isTerminal, heureFin
 
   if (ctrl.cartons.length > 0) {
     t += `VÉRIFICATION DES MARCHANDISES :\n\n`
+    const nbUnites = ctrl.cartons.length
+
+    // Ordinaux français
+    const ordinaux = ['premier', 'second', 'troisième', 'quatrième', 'cinquième', 'sixième', 'septième', 'huitième', 'neuvième', 'dixième']
+    const ordinauxF = ['première', 'seconde', 'troisième', 'quatrième', 'cinquième', 'sixième', 'septième', 'huitième', 'neuvième', 'dixième']
+
     ctrl.cartons.forEach((unite, i) => {
       const type = unite.type || 'carton'
       const typesConfig = {
-        carton:  { label: 'Carton',              article: 'le',  labelMin: 'carton',  feminin: false },
-        palette: { label: 'Palette',             article: 'la',  labelMin: 'palette', feminin: true  },
-        sac:     { label: 'Sac',                 article: 'le',  labelMin: 'sac',     feminin: false },
-        caisse:  { label: 'Caisse / Colis bois', article: 'la',  labelMin: 'caisse',  feminin: true  },
-        vrac:    { label: 'Vrac',                article: null,  labelMin: 'vrac',    feminin: false },
-        article: { label: 'Article',             article: "l'",  labelMin: 'article', feminin: false, isArticle: true },
-        unite:   { label: 'Unité isolée',        article: "l'",  labelMin: 'unité',   feminin: true,  isArticle: true },
-        autre:   { label: 'Unité',               article: "l'",  labelMin: 'unité',   feminin: true,  isArticle: true },
+        carton:  { label: 'Carton',              article: 'le',  articleIndef: 'un',  labelMin: 'carton',  feminin: false },
+        palette: { label: 'Palette',             article: 'la',  articleIndef: 'une', labelMin: 'palette', feminin: true  },
+        sac:     { label: 'Sac',                 article: 'le',  articleIndef: 'un',  labelMin: 'sac',     feminin: false },
+        caisse:  { label: 'Caisse / Colis bois', article: 'la',  articleIndef: 'une', labelMin: 'caisse',  feminin: true  },
+        vrac:    { label: 'Vrac',                article: null,  articleIndef: null,  labelMin: 'vrac',    feminin: false },
+        article: { label: 'Article',             article: "l'",  articleIndef: 'un',  labelMin: 'article', feminin: false, isArticle: true },
+        unite:   { label: 'Unité isolée',        article: "l'",  articleIndef: 'une', labelMin: 'unité',   feminin: true,  isArticle: true },
+        autre:   { label: 'Unité',               article: "l'",  articleIndef: 'une', labelMin: 'unité',   feminin: true,  isArticle: true },
       }
       const cfg = typesConfig[type] || typesConfig.autre
       const isVrac = type === 'vrac'
       const isArticle = cfg.isArticle === true
 
+      // Ordinal accordé en genre
+      const ordinal = cfg.feminin
+        ? (ordinauxF[i] || `${i + 1}ème`)
+        : (ordinaux[i] || `${i + 1}ème`)
+
       if (isVrac) {
-        t += `Marchandise en vrac (unité n°${i + 1}) :\n`
+        if (nbUnites > 1) t += `${je} ${demande} au ${qualite} ${cfg.articleIndef} ${ordinal} lot en vrac${unite.reference ? ` portant la réf. ${unite.reference}` : ''}.\n`
         if (unite.descriptionMentions) t += `${unite.descriptionMentions}\n`
         t += `\n`
+
       } else if (isArticle) {
-        t += `${cfg.label} n°${i + 1}${unite.reference ? ` — Référence : ${unite.reference}` : ''}\n`
+        if (nbUnites > 1) {
+          t += `${je} ${demande} au ${qualite} ${cfg.articleIndef} ${ordinal} ${cfg.labelMin}${unite.reference ? ` portant la réf. ${unite.reference}` : ''}.\n`
+        } else if (unite.reference) {
+          t += `${je} ${demande} au ${qualite} ${cfg.articleIndef} ${cfg.labelMin} portant la réf. ${unite.reference}.\n`
+        }
         if (unite.descriptionMentions) t += `${unite.descriptionMentions}\n`
         t += `${je} ${demande} au ${qualite} de remettre ${cfg.article}${cfg.labelMin} dans le conteneur.\n\n`
+
       } else {
-        t += `${cfg.label} n°${i + 1}${unite.reference ? ` — Référence : ${unite.reference}` : ''}\n`
+        // Titre uniquement si plusieurs unités
+        if (nbUnites > 1) {
+          t += `${je} ${demande} au ${qualite} ${cfg.articleIndef} ${ordinal} ${cfg.labelMin}${unite.reference ? ` portant la réf. ${unite.reference}` : ''}.\n`
+        } else if (unite.reference) {
+          t += `${je} ${demande} au ${qualite} ${cfg.articleIndef} ${cfg.labelMin} portant la réf. ${unite.reference}.\n`
+        }
         if (unite.descriptionMentions) t += `${unite.descriptionMentions}\n`
 
-        // Prélèvement pour examen bureau (distinct du labo)
         if (unite.prelevementExamen && unite.detailPrelevementExamen) {
           t += `${je} prélève${deuxAgents ? 'ons' : ''} ${unite.detailPrelevementExamen} pour examen à ${deuxAgents ? 'notre' : 'mon'} bureau. Ces articles seront restitués au RDE après examen.\n`
         }
