@@ -6,8 +6,7 @@ function genVisiteConteneur(conteneur, ctrl, plombBL, date, isTerminal, heureFin
   if (!ctrl) return ''
   let t = ''
 
-  const moi = deuxAgents ? 'Nous' : 'Moi'
-  const je = deuxAgents ? 'Nous' : 'Moi,'
+  const je = deuxAgents ? 'Nous' : 'Je'
   const fais = deuxAgents ? 'faisons' : 'fais'
   const demande = deuxAgents ? 'demandons' : 'demande'
   const constate = deuxAgents ? 'constatons' : 'constate'
@@ -34,7 +33,7 @@ function genVisiteConteneur(conteneur, ctrl, plombBL, date, isTerminal, heureFin
     } else {
       t += `\n`
     }
-    t += `${moi}, je ${fais} rompre le scellé commercial n° ${plombBLStr} par ${commisNom}, ouvrir le conteneur et aérer celui-ci.\n\n`
+    t += `${je} ${fais} rompre le scellé commercial n° ${plombBLStr} par ${commisNom}, ouvrir le conteneur et aérer celui-ci.\n\n`
   }
 
   if (ctrl.descriptionChargement) {
@@ -66,17 +65,17 @@ function genVisiteConteneur(conteneur, ctrl, plombBL, date, isTerminal, heureFin
       } else if (isArticle) {
         t += `${cfg.label} n°${i + 1}${unite.reference ? ` — Référence : ${unite.reference}` : ''}\n`
         if (unite.descriptionMentions) t += `${unite.descriptionMentions}\n`
-        t += `${moi}, je ${demande} au ${qualite} de remettre ${cfg.article}${cfg.labelMin} dans le conteneur.\n\n`
+        t += `${je} ${demande} au ${qualite} de remettre ${cfg.article}${cfg.labelMin} dans le conteneur.\n\n`
       } else {
         t += `${cfg.label} n°${i + 1}${unite.reference ? ` — Référence : ${unite.reference}` : ''}\n`
         if (unite.descriptionMentions) t += `${unite.descriptionMentions}\n`
         if (unite.mentionFermeture === 'complet') {
-          t += `${moi}, je ${fais} refermer ${cfg.article} ${cfg.labelMin} et apposer dessus les mentions "Visite douane" et la date ${date}.\n\n`
+          t += `${je} ${fais} refermer ${cfg.article} ${cfg.labelMin} et apposer dessus les mentions "Visite douane" et la date ${date}.\n\n`
         } else if (unite.mentionFermeture === 'libre' && unite.mentionLibre) {
-          t += `${moi}, je ${fais} refermer ${cfg.article} ${cfg.labelMin} et apposer la mention : "${unite.mentionLibre}".\n\n`
+          t += `${je} ${fais} refermer ${cfg.article} ${cfg.labelMin} et apposer la mention : "${unite.mentionLibre}".\n\n`
         } else if (unite.mentionFermeture === 'prelevement_examen') {
           const detail = unite.detailPrelevementExamen ? ` (${unite.detailPrelevementExamen})` : ''
-          t += `Un prélèvement pour examen a été effectué${detail}. ${moi}, je ${fais} refermer ${cfg.article} ${cfg.labelMin} avec mention du prélèvement. Les articles prélevés seront restitués au RDE après examen.\n\n`
+          t += `Un prélèvement pour examen a été effectué${detail}. ${je} ${fais} refermer ${cfg.article} ${cfg.labelMin} avec mention du prélèvement. Les articles prélevés seront restitués au RDE après examen.\n\n`
         }
       }
     })
@@ -109,7 +108,7 @@ function genVisiteConteneur(conteneur, ctrl, plombBL, date, isTerminal, heureFin
 
   if (isTerminal && ctrl.nouveauPlomb) {
     const fin = heureFinControle ? heureFinControle.replace(':', 'h') : '__h__'
-    t += `${moi}, je ${fais} refermer le conteneur et apposer un nouveau plomb commercial n° ${ctrl.nouveauPlomb} reconnu intègre. Fin des opérations de visite à ${fin}.\n\n`
+    t += `${je} ${fais} refermer le conteneur et apposer un nouveau plomb commercial n° ${ctrl.nouveauPlomb} reconnu intègre. Fin des opérations de visite à ${fin}.\n\n`
   }
 
   return t
