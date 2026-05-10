@@ -85,39 +85,44 @@ function genVisiteConteneur(conteneur, ctrl, plombBL, date, isTerminal, heureFin
   if (ctrl.hasPrelevementsLabo && ctrl.prelevementsLabo.length > 0) {
     const nb = ctrl.prelevementsLabo.length
     const nousJe = deuxAgents ? 'Nous décidons' : 'Je décide'
-    const mettons = deuxAgents ? 'Nous mettons' : 'Je mets'
+    const mettons = deuxAgents ? 'Nous mettons ensuite' : 'Je mets ensuite'
     const emportons = deuxAgents ? 'nous emportons avec nous à notre bureau' : "j'emporte avec moi à mon bureau"
+    const laissons = deuxAgents ? 'nous laissons' : 'je laisse'
+    const civ = ctrl.commis.civilite || 'M.'
+    const commisAppel = `${civ} ${ctrl.commis.prenom || ''} ${ctrl.commis.nom || ''}`.trim()
+    const qualite = ctrl.commis.qualite === 'coursier' ? 'coursier' : 'commis'
 
     t += `${nousJe} d'effectuer ${nb} prélèvement${nb > 1 ? 's' : ''}.\n\n`
 
     ctrl.prelevementsLabo.forEach((p, i) => {
       const modePrelev = p.modePrelev || 'sachets'
-      const ref = p.reference ? `de la référence ${p.reference}` : ''
-      const qte = p.quantite ? `, quantité : ${p.quantite}` : ''
+      const qteNum = parseInt(p.quantite) || 1
+      const qteStr = qteNum > 1 ? `${qteNum} pièces` : '1 pièce'
+      const ref = p.reference || '[référence non renseignée]'
 
-      t += `Prélèvement n°${i + 1}${ref ? ` — ${ref}` : ''}${qte}.\n`
+      t += `Le prélèvement n°${i + 1} contient ${qteStr} de la référence "${ref}". `
+      t += `Je demande à ${commisAppel} cette même référence en 4 exemplaires qui sont prélevés dans différentes parties de la marchandise.\n`
 
       if (modePrelev === 'sachets') {
-        t += `${mettons} ce${nb > 1 ? 's' : ''} prélèvement${nb > 1 ? 's' : ''} dans des sachets portant les numéros de scellés suivants :\n`
+        t += `${mettons} ce prélèvement dans des sachets portant les numéros de scellés suivants :\n`
 
-        // Sachets 1-3 (douane)
-        const sachetsDouane = [
-          { num: p.scelleS1, dest: p.sachet1 },
-          { num: p.scelleS2, dest: p.sachet2 },
-          { num: p.scelleS3, dest: p.sachet3 },
+        const sachets = [
+          { num: p.scelleS1, dest: p.sachet1, label: 'Sachet 1 (pour la douane)' },
+          { num: p.scelleS2, dest: p.sachet2, label: 'Sachet 2 (pour la douane)' },
+          { num: p.scelleS3, dest: p.sachet3, label: 'Sachet 3 (pour la douane)' },
         ]
-        sachetsDouane.forEach((s, idx) => {
+        sachets.forEach(s => {
           const destPhrase = s.dest === 'emporte'
-            ? `${emportons}`
-            : `laissé${deuxAgents ? 's' : ''} à ${lieu || 'TDF'}`
-          t += `  • Sachet ${idx + 1} (douane) — scellé n° ${s.num || 'Non renseigné'} : ${destPhrase}\n`
+            ? `${emportons} ce sachet afin de l'envoyer au laboratoire pour analyse`
+            : `${laissons} ce sachet à ${lieu || 'TDF'}`
+          t += `  • ${s.label} — scellé n° ${s.num || 'Non renseigné'} : ${destPhrase}\n`
         })
 
-        // Sachet 4 (RDE)
-        const s4dest = p.sachet4 === 'laisse'
-          ? `laissé à ${lieu || 'TDF'} et remis à ${commisNom}`
-          : `remis à ${commisNom}`
-        t += `  • Sachet 4 (RDE) — scellé n° ${p.scelleS4 || 'Non renseigné'} : ${s4dest}\n\n`
+        // Sachet 4 RDE
+        const s4phrase = p.sachet4 === 'laisse'
+          ? `laissé à ${lieu || 'TDF'} et remis à ${commisAppel} pour le RDE`
+          : `remis à ${commisAppel} et emporté chez le RDE`
+        t += `  • Sachet 4 (RDE) — scellé n° ${p.scelleS4 || 'Non renseigné'} : ${s4phrase}\n\n`
 
       } else {
         t += `Le prélèvement est effectué à l'aide d'une pince à sceller et de ficelle résistante, scellé n° ${p.numeroScelle || 'Non renseigné'}.\n\n`

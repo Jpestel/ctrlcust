@@ -410,23 +410,22 @@ function ConteneurControle({ ctrl, conteneur, plombBL, dateControle, onUpdate, i
       <div className="section">
         <div className="section-title">Personne présente</div>
         <div className="form-row">
+          <div className="form-group" style={{ maxWidth: '100px' }}>
+            <label>Civilité</label>
+            <select value={ctrl.commis.civilite || 'M.'} onChange={e => updateCommis('civilite', e.target.value)}>
+              <option value="M.">M.</option>
+              <option value="Mme">Mme</option>
+            </select>
+          </div>
           <div className="form-group">
             <label>Prénom</label>
-            <input
-              type="text"
-              placeholder="Prénom"
-              value={ctrl.commis.prenom}
-              onChange={e => updateCommis('prenom', e.target.value)}
-            />
+            <input type="text" placeholder="Prénom" value={ctrl.commis.prenom}
+              onChange={e => updateCommis('prenom', e.target.value)} />
           </div>
           <div className="form-group">
             <label>Nom</label>
-            <input
-              type="text"
-              placeholder="NOM"
-              value={ctrl.commis.nom}
-              onChange={e => updateCommis('nom', e.target.value.toUpperCase())}
-            />
+            <input type="text" placeholder="NOM" value={ctrl.commis.nom}
+              onChange={e => updateCommis('nom', e.target.value.toUpperCase())} />
           </div>
         </div>
         <div className="form-group">
