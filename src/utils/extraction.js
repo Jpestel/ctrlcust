@@ -443,35 +443,44 @@ function extractDecArticles(text) {
   return codesWithPos.map((item, i) => {
     const { code, index } = item
 
-    // Zone de recherche : 800 chars après le code SH (avant le prochain code SH si présent)
+    // Zone de recherche élargie : 1500 chars après le code SH
     const nextCode = codesWithPos[i + 1]
-    const end = nextCode ? Math.min(nextCode.index, index + 800) : index + 800
+    const end = nextCode ? Math.min(nextCode.index, index + 1500) : index + 1500
     const after = text.substring(index + code.length, end)
 
-    // Nombre de colis dans la partie CONDITIONNEMENT de l'article
+    // Nombre de colis — plusieurs patterns par ordre de priorité
     let nombreColis = null
 
-    // Priorité 1 : "Nombre de colis : 968"
+    // Priorité 1 : "Nombre de colis : 968" (format DEC standard)
     const colisRe = /Nombre\s*de\s*colis\s*[:\-]?\s*(\d[\d\s]*)/i
     const mColis = colisRe.exec(after)
     if (mColis) {
-      const val = parseInt(mColis[1].replace(/\s/g, ''), 10)
-      if (val > 0) nombreColis = val
+      nombreColis = parseInt(mColis[1].replace(/\s/g, ''), 10) || null
     }
 
-    // Priorité 2 : type de colis suivi du nombre — ex: "PK 968" ou "968 PK" ou "CT 362"
-    if (!nombreColis) {
-      const pkRe = /\b(?:PK|CT|CS|BX|PL|SA|TE|CF|BE|BK|NE|RG|TU|VO)\s+(\d+)\b/i
-      const pkMatch = pkRe.exec(after)
+    // Priorité 2 : code type de colis suivi du nombre — ex: "PK - Colis (package)\n968"
+    if (nombreColis === null) {
+      const pkBlockRe = /\b(?:PK|CT|CS|BX|PL|SA|TE|CF|BE|BK|NE|RG|TU|VO)\b[^\n]*\n\s*(\d+)/i
+      const pkMatch = pkBlockRe.exec(after)
       if (pkMatch) {
         const val = parseInt(pkMatch[1], 10)
         if (val > 0) nombreColis = val
       }
     }
 
-    // Priorité 3 : nombre suivi de type de colis — ex: "968 cartons" "362 colis"
-    if (!nombreColis) {
-      const numColisRe = /\b(\d+)\s*(?:cartons?|colis|paquets?|caisses?|sachets?|sacs?|pkgs?|ctns?)\b/i
+    // Priorité 3 : "PK 968" ou "968 PK" sur la même ligne
+    if (nombreColis === null) {
+      const pkInlineRe = /\b(?:PK|CT|CS|BX|PL|SA|TE)\s+(\d+)|(\d+)\s+(?:PK|CT|CS|BX|PL|SA|TE)\b/i
+      const pkMatch = pkInlineRe.exec(after)
+      if (pkMatch) {
+        const val = parseInt(pkMatch[1] || pkMatch[2], 10)
+        if (val > 0) nombreColis = val
+      }
+    }
+
+    // Priorité 4 : "968 cartons" / "362 colis"
+    if (nombreColis === null) {
+      const numColisRe = /\b(\d+)\s*(?:cartons?|colis|paquets?|caisses?|pkgs?|ctns?)\b/i
       const numMatch = numColisRe.exec(after)
       if (numMatch) {
         const val = parseInt(numMatch[1], 10)
