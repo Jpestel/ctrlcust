@@ -108,14 +108,29 @@ export function extractSealMap(text) {
   const upper = text.toUpperCase()
   const result = {}
 
+  // Format explicite : SEAL XXXXXXX (BL CMA CGM, Hapag-Lloyd, etc.)
+  // ex: SEAL M4895046  ou  TCNU2388293 ... SEAL M4895046
+  const sealKeywordRe = /SEAL\s+([A-Z0-9]{4,15})/g
+  const containers = extractContainerNumbers(upper)
+  // On associe chaque SEAL au dernier conteneur mentionné avant lui
+  let lastContainer = null
+  const upperLines = upper.split('\n')
+  for (const line of upperLines) {
+    const contMatch = line.match(/[A-Z]{3}[UJZ]\d{7}/)
+    if (contMatch) lastContainer = contMatch[0]
+    const sealMatch = line.match(/SEAL\s+([A-Z0-9]{4,15})/)
+    if (sealMatch && lastContainer) {
+      result[lastContainer] = sealMatch[1]
+    }
+  }
+
   // Format slash : CONTNUM/SEALNUM ou CONTNUM / SEALNUM
   const slashRe = /([A-Z]{3}[UJZ]\d{7})\s*\/\s*([A-Z0-9]{4,15})(?![0-9]{3,})/g
   for (const m of execAll(upper, slashRe)) {
-    // Ignorer si le "plomb" ressemble à un numéro de BL (trop long ou tout numérique)
-    if (!/^\d{9,}$/.test(m[2])) result[m[1]] = m[2]
+    if (!/^\d{9,}$/.test(m[2])) result[m[1]] = result[m[1]] || m[2]
   }
 
-  // Format espace : CONTNUM SEALNUM (tableau BL — le plomb suit immédiatement)
+  // Format espace : CONTNUM SEALNUM (tableau BL)
   const spaceRe = /([A-Z]{3}[UJZ]\d{7})\s+([A-Z]{1,3}\d{4,9}|\d{5,9}[A-Z]{0,3})(?=\s)/g
   for (const m of execAll(upper, spaceRe)) {
     if (!result[m[1]] && !/^\d{9,}$/.test(m[2])) result[m[1]] = m[2]
@@ -435,10 +450,33 @@ function extractDecArticles(text) {
 
     // Nombre de colis dans la partie CONDITIONNEMENT de l'article
     let nombreColis = null
+
+    // Priorité 1 : "Nombre de colis : 968"
     const colisRe = /Nombre\s*de\s*colis\s*[:\-]?\s*(\d[\d\s]*)/i
     const mColis = colisRe.exec(after)
     if (mColis) {
-      nombreColis = parseInt(mColis[1].replace(/\s/g, ''), 10)
+      const val = parseInt(mColis[1].replace(/\s/g, ''), 10)
+      if (val > 0) nombreColis = val
+    }
+
+    // Priorité 2 : type de colis suivi du nombre — ex: "PK 968" ou "968 PK" ou "CT 362"
+    if (!nombreColis) {
+      const pkRe = /\b(?:PK|CT|CS|BX|PL|SA|TE|CF|BE|BK|NE|RG|TU|VO)\s+(\d+)\b/i
+      const pkMatch = pkRe.exec(after)
+      if (pkMatch) {
+        const val = parseInt(pkMatch[1], 10)
+        if (val > 0) nombreColis = val
+      }
+    }
+
+    // Priorité 3 : nombre suivi de type de colis — ex: "968 cartons" "362 colis"
+    if (!nombreColis) {
+      const numColisRe = /\b(\d+)\s*(?:cartons?|colis|paquets?|caisses?|sachets?|sacs?|pkgs?|ctns?)\b/i
+      const numMatch = numColisRe.exec(after)
+      if (numMatch) {
+        const val = parseInt(numMatch[1], 10)
+        if (val > 0) nombreColis = val
+      }
     }
 
     // Type de colis (ex: "TE - Pneumatique")
