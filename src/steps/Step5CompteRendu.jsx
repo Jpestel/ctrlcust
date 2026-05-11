@@ -17,31 +17,23 @@ function genVisiteConteneur(conteneur, ctrl, plombBL, date, isTerminal, heureFin
   const commisNom = `${ctrl.commis.prenom} ${ctrl.commis.nom}`.trim() || '[Nom non renseigné]'
   const qualite = ctrl.commis.qualite === 'commis' ? 'commis' : 'coursier'
 
-  t += `${'─'.repeat(52)}\n`
-  t += `CONTENEUR N° ${conteneur.numero}\n`
-  t += `${'─'.repeat(52)}\n\n`
+  t += `Conteneur n° ${conteneur.numero}.\n\n`
 
   if (isTerminal) {
-    t += `VÉRIFICATION DU PLOMB :\n`
-    t += `  Plomb mentionné sur le BL      : ${plombBLStr}\n`
-    t += `  Plomb constaté sur le conteneur : ${plombReel}\n`
     const comparables = plombBLStr !== 'Non renseigné' && plombReel !== 'Non renseigné'
     if (comparables) {
       t += plombBLStr === plombReel
-        ? `  → Les numéros de plombs sont concordants.\n\n`
-        : `  → DISCORDANCE CONSTATÉE entre le numéro de plomb figurant sur le Bill of Lading (${plombBLStr}) et le numéro de plomb apposé sur le conteneur (${plombReel}).\n\n`
-    } else {
-      t += `\n`
+        ? `Le scellé commercial n° ${plombBLStr} porté sur le Bill of Lading correspond au scellé apposé sur le conteneur.\n`
+        : `Une discordance est constatée entre le numéro de plomb figurant sur le Bill of Lading (${plombBLStr}) et le numéro de plomb apposé sur le conteneur (${plombReel}).\n`
     }
     t += `${je} ${fais} rompre le scellé commercial n° ${plombBLStr} par ${commisNom}, ouvrir le conteneur et aérer celui-ci.\n\n`
   }
 
   if (ctrl.descriptionChargement) {
-    t += `DESCRIPTION DU CHARGEMENT :\n${ctrl.descriptionChargement}\n\n`
+    t += `${ctrl.descriptionChargement}\n\n`
   }
 
   if (ctrl.cartons.length > 0) {
-    t += `VÉRIFICATION DES MARCHANDISES :\n\n`
     const nbUnites = ctrl.cartons.length
 
     // Ordinaux français
@@ -91,7 +83,13 @@ function genVisiteConteneur(conteneur, ctrl, plombBL, date, isTerminal, heureFin
         } else {
           // Plusieurs du même type → ordinal
           if (cfg.verbe === 'ouverture') return `${je} ${demande} au ${qualite} l'ouverture ${cfg.feminin ? "d'une" : "d'un"} ${ordinal} ${cfg.labelMin}${refStr}.\n`
-          if (cfg.verbe === 'examen')    return `${je} souhaite${deuxAgents ? 'ons' : ''} examiner ${cfg.articleIndef} ${ordinal} ${cfg.labelMin}${refStr}.\n`
+          if (cfg.verbe === 'examen') {
+            if (totalOfType === 1) {
+              return `${je} procède${deuxAgents ? 'ons' : ''} à l'examen visuel d'une ${cfg.labelMin}${refStr}, sans déplacement de celle-ci.\n`
+            } else {
+              return `${je} procède${deuxAgents ? 'ons' : ''} à l'examen visuel d'une ${ordinal} ${cfg.labelMin}${refStr}, sans déplacement de celle-ci.\n`
+            }
+          }
           if (cfg.verbe === 'presentation') return `${je} ${demande} au ${qualite} de présenter ${cfg.articleIndef} ${ordinal} ${cfg.labelMin}${refStr}.\n`
         }
         return ''
@@ -282,24 +280,16 @@ function generateTexte(data) {
   const nomCommis = `${premierCtrl?.commis?.prenom || ''} ${premierCtrl?.commis?.nom || ''}`.trim()
 
   let t = ''
-  t += `DÉROULEMENT DU CONTRÔLE PHYSIQUE\n`
-  t += `${'='.repeat(52)}\n\n`
-  t += `Personne présente au contrôle : ${nomCommis || '[Non renseigné]'}\n`
-  t += `Fonction                       : ${genFonctionCommis(premierCtrl, importateurStr, representantStr)}\n\n`
-  t += `Date et heure de début : ${date1} à ${heure1}\n`
-  if (heureFin) t += `Date et heure de fin   : ${date1} à ${heureFin}\n`
-  t += `Déclaration            : ${crn}\n\n`
+  t += `Personne présente : ${nomCommis || '[Non renseigné]'}, ${genFonctionCommis(premierCtrl, importateurStr, representantStr)}.\n\n`
+  t += `Date et heure de début : ${date1} à ${heure1}${heureFin ? ` — fin à ${heureFin}` : ''}.\n`
+  t += `Déclaration : ${crn}.\n\n`
 
   const nouveauxScelles = (conteneurs || [])
     .map(c => controles?.find(ct => ct.conteneurId === c.id)?.nouveauPlomb)
     .filter(Boolean)
   if (nouveauxScelles.length > 0) {
-    t += `Nouveau(x) numéro(s) de scellé : ${nouveauxScelles.join(' / ')}\n\n`
+    t += `Nouveau(x) numéro(s) de scellé : ${nouveauxScelles.join(', ')}.\n\n`
   }
-
-  t += `${'─'.repeat(52)}\n`
-  t += `DESCRIPTION ET INSPECTION DES MARCHANDISES\n`
-  t += `${'─'.repeat(52)}\n\n`
 
   t += `Le ${date1} à ${heure1}, ${identiteAgents}, ${deuxAgents ? 'nous rendons' : 'me rends'} en fonction de visite, ${porteur}, en tenue civile ${revetu} de la chasuble sérigraphiée "Douane" et ${munis}, sur le lieu de contrôle situé à ${lieu1Court || lieu1} afin de procéder au contrôle des marchandises dédouanées sur la déclaration ${fluxLabel} n° ${crn}.\n\n`
   t += `Les opérations de visite se déroulent en présence constante et effective de ${nomCommis || '[Commis/Coursier]'}.\n\n`
@@ -310,17 +300,13 @@ function generateTexte(data) {
   }
 
   if (isTerminal && hasVisiteDepot && (controlesDepot || []).length > 0) {
-    t += `${'═'.repeat(52)}\n`
-    t += `VISITE 2 — DÉPOTAGE — ${lieu2} — ${date2} à ${heure2}\n`
-    t += `${'═'.repeat(52)}\n\n`
-    t += `Suite au contrôle au terminal ${lieu1Court} du ${date1}, la marchandise a fait l'objet d'un dépotage en magasin. Une seconde visite physique a été effectuée.\n\n`
+    t += `Suite au contrôle au terminal ${lieu1Court} du ${date1}, la marchandise a fait l'objet d'un dépotage en magasin le ${date2} à ${heure2}. Une seconde visite physique a été effectuée.\n\n`
     for (const conteneur of conteneurs || []) {
       const ctrl = (controlesDepot || []).find(c => c.conteneurId === conteneur.id)
       t += genVisiteConteneur(conteneur, ctrl, null, date2, false, null, deuxAgents, lieuControleDepot || 'entrepôt')
     }
   }
 
-  t += `${'='.repeat(52)}\n`
   t += `Fait au Havre, le ${date1}.\n`
   if (nomAgent) t += `\n${civ1} ${agent1Nom}`
   if (deuxAgents) t += `\n${civ2} ${agent2Nom}`
